@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { IconButton } from "./icon-button";
 
 type ModalProps = {
@@ -55,7 +56,10 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
     };
   }, [open]);
 
-  return (
+  // Portal to <body> so the fixed overlay always covers the full viewport.
+  // The dashboard shell uses backdrop-filter, which makes it a containing
+  // block for position:fixed — rendering inline would clip the overlay to it.
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
@@ -95,7 +99,8 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 
