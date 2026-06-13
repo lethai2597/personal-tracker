@@ -128,3 +128,32 @@ export function clearData() {
   }
   window.location.reload();
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function readTodos(): Task[] {
+  try {
+    const raw = window.localStorage.getItem(DATA_KEYS.todos);
+    return raw ? (JSON.parse(raw) as Task[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** How many done tasks were completed more than `days` ago (for the confirm). */
+export function countDoneOlderThan(days: number): number {
+  const cutoff = Date.now() - days * DAY_MS;
+  return readTodos().filter(
+    (t) => t.status === "done" && t.doneAt != null && t.doneAt < cutoff,
+  ).length;
+}
+
+/** Permanently delete done tasks completed more than `days` ago, then reload. */
+export function purgeDoneOlderThan(days: number) {
+  const cutoff = Date.now() - days * DAY_MS;
+  const kept = readTodos().filter(
+    (t) => !(t.status === "done" && t.doneAt != null && t.doneAt < cutoff),
+  );
+  window.localStorage.setItem(DATA_KEYS.todos, JSON.stringify(kept));
+  window.location.reload();
+}

@@ -12,8 +12,10 @@ import { useTodos } from "./use-todos";
 
 type View = "board" | "calendar";
 
+type TodoCardProps = { className?: string; archiveDays: number };
+
 /** Main 2x2 tracker: kanban board or calendar over the same task list. */
-export function TodoCard({ className }: { className?: string }) {
+export function TodoCard({ className, archiveDays }: TodoCardProps) {
   const { tasks, byStatus, addTask, patchTask, reorderTasks, removeTask } =
     useTodos();
   const [view, setView] = useLocalStorage<View>("pt.todo-view", "board");
@@ -70,6 +72,7 @@ export function TodoCard({ className }: { className?: string }) {
           byStatus={byStatus}
           onReorder={reorderTasks}
           onOpen={(task) => setDetailId(task.id)}
+          archiveDays={archiveDays}
         />
       ) : (
         <CalendarView

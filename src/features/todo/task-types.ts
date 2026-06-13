@@ -11,6 +11,8 @@ export type Task = {
   dueDate: string;
   status: TaskStatus;
   createdAt: number;
+  /** Epoch ms when the task entered "done"; used to fold away old done tasks. */
+  doneAt?: number;
 };
 
 export const STATUS_META: Record<

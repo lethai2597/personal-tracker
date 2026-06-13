@@ -9,6 +9,8 @@ export type Settings = {
   primary: string;
   /** Background image path under /public, or "" for a plain backdrop. */
   background: string;
+  /** Hide done tasks completed more than N days ago; 0 = never hide. */
+  archiveDays: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -16,7 +18,25 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: "light",
   primary: "#f43f5e",
   background: "/bg-2.jpg",
+  archiveDays: 90,
 };
+
+/** Choices for the auto-hide threshold (Settings). */
+export const ARCHIVE_DAY_OPTIONS = [
+  { label: "30 ngày", value: 30 },
+  { label: "90 ngày", value: 90 },
+  { label: "180 ngày", value: 180 },
+  { label: "1 năm", value: 365 },
+  { label: "Không ẩn", value: 0 },
+];
+
+/** Choices for the manual "purge old done tasks" action (Settings). */
+export const PURGE_DAY_OPTIONS = [
+  { label: "30 ngày", value: 30 },
+  { label: "90 ngày", value: 90 },
+  { label: "180 ngày", value: 180 },
+  { label: "1 năm", value: 365 },
+];
 
 export const PRIMARY_COLORS = [
   { name: "Emerald", value: "#10b981" },

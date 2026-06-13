@@ -5,9 +5,38 @@ import { TASK_STATUSES, type Task, type TaskStatus } from "./task-types";
 
 export type TaskDraft = Pick<Task, "title" | "description" | "dueDate" | "status">;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * A done task completed more than `days` ago — folded away on the board to
+ * reduce clutter. `days <= 0` disables hiding entirely.
+ */
+export function isArchivedDone(t: Task, days: number): boolean {
+  if (days <= 0) return false;
+  return (
+    t.status === "done" && t.doneAt != null && Date.now() - t.doneAt > days * DAY_MS
+  );
+}
+
+/** Stamp doneAt when a task enters "done"; clear it when it leaves. */
+function stampDone(tasks: Task[]): Task[] {
+  const now = Date.now();
+  return tasks.map((t) => {
+    if (t.status === "done") return t.doneAt != null ? t : { ...t, doneAt: now };
+    return t.doneAt != null ? { ...t, doneAt: undefined } : t;
+  });
+}
+
 /** Source of truth for tasks with grouping + CRUD + status moves. */
 export function useTodos() {
-  const [tasks, setTasks] = useLocalStorage<Task[]>("pt.todos", []);
+  const [tasks, setRawTasks] = useLocalStorage<Task[]>("pt.todos", []);
+
+  // Every write runs through stampDone so doneAt stays correct no matter which
+  // path changed the status (dialog edit, status pill, or drag to the column).
+  const setTasks: typeof setRawTasks = (updater) =>
+    setRawTasks((prev) =>
+      stampDone(typeof updater === "function" ? updater(prev) : updater),
+    );
 
   const byStatus = useMemo(() => {
     const groups = Object.fromEntries(

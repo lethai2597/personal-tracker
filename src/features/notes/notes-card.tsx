@@ -4,7 +4,9 @@ import { useLocalStorage } from "../../lib/use-local-storage";
 
 /** A single free-form scratch note — no editor, no categories, just text. */
 export function NotesCard({ className }: { className?: string }) {
-  const [text, setText] = useLocalStorage("pt.note", "");
+  // Free text changes on every keystroke — debounce the write so a large note
+  // doesn't re-serialize the whole string each key press.
+  const [text, setText] = useLocalStorage("pt.note", "", { debounce: 400 });
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
 
   return (

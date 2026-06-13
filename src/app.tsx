@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { DashboardHeader } from "./components/dashboard-header";
 import { SettingsModal } from "./components/settings-modal";
+import { StorageAlert } from "./components/storage-alert";
 import { WelcomeModal } from "./components/welcome-modal";
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useSettings } from "./lib/use-settings";
@@ -36,7 +37,10 @@ export function App() {
           transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
           className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-[repeat(3,minmax(0,1fr))] lg:grid-rows-[minmax(0,3fr)_minmax(0,3fr)_minmax(0,4fr)]"
         >
-          <TodoCard className="min-h-[460px] lg:col-span-2 lg:row-span-2 lg:min-h-0" />
+          <TodoCard
+            className="min-h-[460px] lg:col-span-2 lg:row-span-2 lg:min-h-0"
+            archiveDays={settings.archiveDays}
+          />
 
           {/* Right column: Pomodoro takes only the height it needs, Notes fills the rest. */}
           <div className="flex min-h-0 flex-col gap-2 lg:col-start-3 lg:row-span-3 lg:row-start-1">
@@ -57,6 +61,8 @@ export function App() {
       />
 
       <WelcomeModal open={!welcomed} onClose={() => setWelcomed(true)} />
+
+      <StorageAlert />
     </div>
   );
 }
