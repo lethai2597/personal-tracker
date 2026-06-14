@@ -1,21 +1,25 @@
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "../../lib/cn";
+import { useConfirm } from "../../components/confirm-dialog";
+import { IconButton } from "../../components/icon-button";
 import { Modal } from "../../components/modal";
 import { DatePicker } from "../../components/ui/date-picker";
+import { TaskChecklist } from "./task-checklist";
 import { STATUS_META, TASK_STATUSES, type Task } from "./task-types";
-import type { TaskDraft } from "./use-todos";
 
 type TaskDetailDialogProps = {
   task: Task | null;
   onClose: () => void;
-  onPatch: (patch: Partial<TaskDraft>) => void;
+  onPatch: (patch: Partial<Task>) => void;
   onDelete: () => void;
 };
 
 /**
- * Trello-style "card back": a readable detail view where each field becomes
- * editable on click and saves immediately — no form, no explicit Save button.
+ * Trello-style "card back": each field edits inline and saves immediately.
+ * A pinned header (status, title, due date) sits above a two-column body —
+ * Description and Checklist scroll independently so neither can blow up the
+ * dialog height. Delete hides behind a quiet header icon with a confirm.
  */
 export function TaskDetailDialog({
   task,
@@ -23,6 +27,7 @@ export function TaskDetailDialog({
   onPatch,
   onDelete,
 }: TaskDetailDialogProps) {
+  const confirm = useConfirm();
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingDesc, setEditingDesc] = useState(false);
   const [title, setTitle] = useState("");
@@ -52,6 +57,19 @@ export function TaskDetailDialog({
   function commitDesc() {
     if (desc !== task!.description) onPatch({ description: desc });
     setEditingDesc(false);
+  }
+
+  async function handleDelete() {
+    const ok = await confirm({
+      title: "Xoá task?",
+      message: `"${task!.title}" sẽ bị xoá vĩnh viễn, không khôi phục được.`,
+      confirmLabel: "Xoá",
+      danger: true,
+    });
+    if (ok) {
+      onDelete();
+      onClose();
+    }
   }
 
   // Status pills live in the modal header (replacing a redundant "Chi tiết" title).
@@ -84,8 +102,25 @@ export function TaskDetailDialog({
     </div>
   );
 
+  const deleteAction = (
+    <IconButton
+      aria-label="Xoá task"
+      title="Xoá task"
+      onClick={handleDelete}
+      className="bg-transparent text-ink-faint hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/15"
+    >
+      <Trash2 size={16} />
+    </IconButton>
+  );
+
   return (
-    <Modal open title={statusPills} onClose={onClose}>
+    <Modal
+      open
+      wide
+      title={statusPills}
+      headerAction={deleteAction}
+      onClose={onClose}
+    >
       <div className="space-y-5">
         {/* Title — click to edit inline. */}
         {editingTitle ? (
@@ -141,7 +176,6 @@ export function TaskDetailDialog({
               onBlur={commitDesc}
               onKeyDown={(e) => {
                 if (e.key === "Escape") {
-                  // Exit the inline edit only — don't let Modal catch Esc + close.
                   e.stopPropagation();
                   setDesc(task.description);
                   setEditingDesc(false);
@@ -155,7 +189,7 @@ export function TaskDetailDialog({
               type="button"
               onClick={() => setEditingDesc(true)}
               className={cn(
-                "block max-h-[38vh] w-full overflow-y-auto whitespace-pre-wrap break-words rounded-[var(--radius-inner)] bg-surface-sunken p-3 text-left text-sm leading-relaxed transition-colors hover:bg-surface-muted",
+                "block max-h-[34vh] w-full overflow-y-auto whitespace-pre-wrap break-words rounded-[var(--radius-inner)] bg-surface-sunken p-3 text-left text-sm leading-relaxed transition-colors hover:bg-surface-muted",
                 task.description ? "text-ink" : "text-ink-faint",
               )}
             >
@@ -164,18 +198,12 @@ export function TaskDetailDialog({
           )}
         </div>
 
-        <div className="border-t border-line pt-4">
-          <button
-            type="button"
-            onClick={() => {
-              onDelete();
-              onClose();
-            }}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-red-50 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
-          >
-            <Trash2 size={16} />
-            Xoá task
-          </button>
+        {/* Checklist. */}
+        <div>
+          <TaskChecklist
+            items={task.checklist ?? []}
+            onChange={(checklist) => onPatch({ checklist })}
+          />
         </div>
       </div>
     </Modal>

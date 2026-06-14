@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { cn } from "../lib/cn";
 import { IconButton } from "./icon-button";
 
 type ModalProps = {
@@ -10,6 +11,10 @@ type ModalProps = {
   title: ReactNode;
   onClose: () => void;
   children: ReactNode;
+  /** Optional control rendered in the header, left of the close button. */
+  headerAction?: ReactNode;
+  /** Wider dialog for multi-column content (e.g. the task detail). */
+  wide?: boolean;
 };
 
 const FOCUSABLE =
@@ -20,7 +25,14 @@ const FOCUSABLE =
  * Tab focus inside, locks background scroll, and restores focus to the trigger
  * on close so keyboard users never get stranded behind the overlay.
  */
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  headerAction,
+  wide,
+}: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Escape closes; Tab cycles within the dialog (skips Radix portals).
@@ -41,13 +53,17 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
   // Lock background scroll, pull focus into the dialog, restore it on close.
   useEffect(() => {
     if (!open) return;
-    const trigger = document.activeElement as HTMLElement | null;
+    const active = document.activeElement as HTMLElement | null;
+    // If a field already took focus (autoFocus), leave it — and don't treat
+    // that field as the trigger to restore to.
+    const focusedInside = !!dialogRef.current?.contains(active);
+    const trigger = focusedInside ? null : active;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const id = window.setTimeout(() => {
       const dialog = dialogRef.current;
-      const first = dialog?.querySelector<HTMLElement>(FOCUSABLE);
-      (first ?? dialog)?.focus();
+      if (!dialog || dialog.contains(document.activeElement)) return;
+      dialog.focus();
     }, 0);
     return () => {
       window.clearTimeout(id);
@@ -76,7 +92,10 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
             aria-modal="true"
             aria-label={typeof title === "string" ? title : "Hộp thoại"}
             tabIndex={-1}
-            className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-[var(--radius-card)] bg-surface p-6 outline-none"
+            className={cn(
+              "max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[var(--radius-card)] bg-surface p-6 outline-none",
+              wide ? "max-w-3xl" : "max-w-xl",
+            )}
             onMouseDown={(e) => e.stopPropagation()}
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -91,9 +110,12 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
               ) : (
                 <div className="min-w-0 flex-1">{title}</div>
               )}
-              <IconButton aria-label="Đóng" onClick={onClose}>
-                <X size={18} />
-              </IconButton>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {headerAction}
+                <IconButton aria-label="Đóng" onClick={onClose}>
+                  <X size={18} />
+                </IconButton>
+              </div>
             </div>
             {children}
           </motion.div>

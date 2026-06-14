@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { App } from "./app";
 import { ConfirmProvider } from "./components/confirm-dialog";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { seedSampleDataIfEmpty } from "./lib/sample-data";
 import { applySettings, DEFAULT_SETTINGS, type Settings } from "./lib/settings";
 
@@ -21,8 +22,10 @@ if (window.localStorage.getItem("pt.welcomed") === null) {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ConfirmProvider>
-      <App />
-    </ConfirmProvider>
+    <TooltipProvider delayDuration={200} skipDelayDuration={300}>
+      <ConfirmProvider>
+        <App />
+      </ConfirmProvider>
+    </TooltipProvider>
   </StrictMode>,
 );

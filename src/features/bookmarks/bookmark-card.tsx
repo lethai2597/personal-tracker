@@ -3,6 +3,7 @@ import { useState } from "react";
 import { BentoCard } from "../../components/bento-card";
 import { useConfirm } from "../../components/confirm-dialog";
 import { IconButton } from "../../components/icon-button";
+import { Tooltip } from "../../components/ui/tooltip";
 import { cn } from "../../lib/cn";
 import { faviconUrl, hostname } from "../../lib/url";
 import { BookmarkDialog } from "./bookmark-dialog";
@@ -125,15 +126,16 @@ export function BookmarkCard({ className }: { className?: string }) {
                     </span>
                   ) : null}
                 </a>
-                <button
-                  type="button"
-                  aria-label="Xóa bookmark"
-                  title="Xóa bookmark"
-                  onClick={() => removeBookmark(b.id)}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink-faint opacity-0 transition hover:bg-surface-hover hover:text-ink group-hover:opacity-100"
-                >
-                  <X size={15} />
-                </button>
+                <Tooltip label="Xóa bookmark">
+                  <button
+                    type="button"
+                    aria-label="Xóa bookmark"
+                    onClick={() => removeBookmark(b.id)}
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink-faint opacity-0 transition hover:bg-surface-hover hover:text-ink group-hover:opacity-100"
+                  >
+                    <X size={15} />
+                  </button>
+                </Tooltip>
               </div>
             ))
           )}

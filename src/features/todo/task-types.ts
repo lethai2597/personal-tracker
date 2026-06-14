@@ -3,6 +3,9 @@ export const TASK_STATUSES = ["backlog", "todo", "doing", "done"] as const;
 
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
+/** A single "việc cần làm" line inside a task. */
+export type ChecklistItem = { id: string; text: string; done: boolean };
+
 export type Task = {
   id: string;
   title: string;
@@ -13,6 +16,8 @@ export type Task = {
   createdAt: number;
   /** Epoch ms when the task entered "done"; used to fold away old done tasks. */
   doneAt?: number;
+  /** Optional checklist of subtasks. */
+  checklist?: ChecklistItem[];
 };
 
 export const STATUS_META: Record<

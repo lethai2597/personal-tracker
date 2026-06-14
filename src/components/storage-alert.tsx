@@ -1,6 +1,7 @@
 import { AlertTriangle, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { STORAGE_FULL_EVENT } from "../lib/use-local-storage";
+import { Tooltip } from "./ui/tooltip";
 
 /**
  * Floating warning shown when a localStorage write fails because the quota is
@@ -25,14 +26,16 @@ export function StorageAlert() {
         Bộ nhớ trình duyệt đã đầy — thay đổi mới có thể không được lưu. Hãy xoá
         bớt dữ liệu trong Cài đặt.
       </span>
-      <button
-        type="button"
-        aria-label="Đóng"
-        onClick={() => setShow(false)}
-        className="grid h-6 w-6 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/20"
-      >
-        <X size={15} />
-      </button>
+      <Tooltip label="Đóng">
+        <button
+          type="button"
+          aria-label="Đóng"
+          onClick={() => setShow(false)}
+          className="grid h-6 w-6 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/20"
+        >
+          <X size={15} />
+        </button>
+      </Tooltip>
     </div>
   );
 }

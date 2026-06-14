@@ -1,5 +1,6 @@
 import { Pause, Play, RotateCcw, SkipForward, Timer } from "lucide-react";
 import { BentoCard } from "../../components/bento-card";
+import { Tooltip } from "../../components/ui/tooltip";
 import { cn } from "../../lib/cn";
 import { usePomodoro } from "./use-pomodoro";
 
@@ -89,24 +90,26 @@ export function PomodoroCard({ className }: { className?: string }) {
             {p.running ? <Pause size={16} /> : <Play size={16} />}
             {p.running ? "Tạm dừng" : "Bắt đầu"}
           </button>
-          <button
-            type="button"
-            aria-label="Bỏ qua phiên"
-            title="Bỏ qua phiên"
-            onClick={p.switchPhase}
-            className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted text-ink-soft transition-colors hover:bg-surface-hover hover:text-ink"
-          >
-            <SkipForward size={16} />
-          </button>
-          <button
-            type="button"
-            aria-label="Đặt lại"
-            title="Đặt lại"
-            onClick={p.reset}
-            className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted text-ink-soft transition-colors hover:bg-surface-hover hover:text-ink"
-          >
-            <RotateCcw size={16} />
-          </button>
+          <Tooltip label="Bỏ qua phiên">
+            <button
+              type="button"
+              aria-label="Bỏ qua phiên"
+              onClick={p.switchPhase}
+              className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted text-ink-soft transition-colors hover:bg-surface-hover hover:text-ink"
+            >
+              <SkipForward size={16} />
+            </button>
+          </Tooltip>
+          <Tooltip label="Đặt lại">
+            <button
+              type="button"
+              aria-label="Đặt lại"
+              onClick={p.reset}
+              className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted text-ink-soft transition-colors hover:bg-surface-hover hover:text-ink"
+            >
+              <RotateCcw size={16} />
+            </button>
+          </Tooltip>
         </div>
 
         <p className="text-xs text-ink-faint">

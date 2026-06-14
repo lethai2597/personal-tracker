@@ -7,7 +7,7 @@ import { CalendarView } from "./calendar-view";
 import { KanbanBoard } from "./kanban-board";
 import { TaskDetailDialog } from "./task-detail-dialog";
 import { TaskDialog } from "./task-dialog";
-import type { Task } from "./task-types";
+import type { Task, TaskStatus } from "./task-types";
 import { useTodos } from "./use-todos";
 
 type View = "board" | "calendar";
@@ -26,8 +26,12 @@ export function TodoCard({ className, archiveDays }: TodoCardProps) {
     ? (tasks.find((t) => t.id === detailId) ?? null)
     : null;
 
-  function openNew(dueDate = "") {
-    setCreateTask({ ...BLANK, dueDate } as Task);
+  function openNew(opts: { dueDate?: string; status?: TaskStatus } = {}) {
+    setCreateTask({
+      ...BLANK,
+      dueDate: opts.dueDate ?? "",
+      status: opts.status ?? "todo",
+    } as Task);
   }
 
   return (
@@ -72,13 +76,14 @@ export function TodoCard({ className, archiveDays }: TodoCardProps) {
           byStatus={byStatus}
           onReorder={reorderTasks}
           onOpen={(task) => setDetailId(task.id)}
+          onAddTask={(status) => openNew({ status })}
           archiveDays={archiveDays}
         />
       ) : (
         <CalendarView
           tasks={tasks}
           onOpen={(task) => setDetailId(task.id)}
-          onCreateOn={(date) => openNew(date)}
+          onCreateOn={(date) => openNew({ dueDate: date })}
         />
       )}
 

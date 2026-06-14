@@ -17,6 +17,7 @@ import {
 import { useConfirm } from "./confirm-dialog";
 import { FieldLabel, TextField } from "./form-controls";
 import { Modal } from "./modal";
+import { Tooltip } from "./ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -122,21 +123,21 @@ export function SettingsModal({
           <FieldLabel>Màu chủ đạo</FieldLabel>
           <div className="flex flex-wrap gap-2">
             {PRIMARY_COLORS.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                title={c.name}
-                aria-label={c.name}
-                onClick={() => onUpdate({ primary: c.value })}
-                style={{ backgroundColor: c.value }}
-                className={cn(
-                  "grid h-9 w-9 place-items-center rounded-full text-white transition-transform hover:scale-105",
-                  settings.primary === c.value &&
-                    "ring-2 ring-ink ring-offset-2 ring-offset-[var(--color-surface)]",
-                )}
-              >
-                {settings.primary === c.value ? <Check size={16} /> : null}
-              </button>
+              <Tooltip key={c.value} label={c.name}>
+                <button
+                  type="button"
+                  aria-label={c.name}
+                  onClick={() => onUpdate({ primary: c.value })}
+                  style={{ backgroundColor: c.value }}
+                  className={cn(
+                    "grid h-9 w-9 place-items-center rounded-full text-white transition-transform hover:scale-105",
+                    settings.primary === c.value &&
+                      "ring-2 ring-ink ring-offset-2 ring-offset-[var(--color-surface)]",
+                  )}
+                >
+                  {settings.primary === c.value ? <Check size={16} /> : null}
+                </button>
+              </Tooltip>
             ))}
           </div>
         </div>
@@ -145,29 +146,31 @@ export function SettingsModal({
           <FieldLabel>Ảnh nền</FieldLabel>
           <div className="grid grid-cols-3 gap-2">
             {BACKGROUNDS.map((bg) => (
-              <button
-                key={bg.name}
-                type="button"
-                onClick={() => onUpdate({ background: bg.value })}
-                className={cn(
-                  "relative aspect-video overflow-hidden rounded-[var(--radius-inner)] bg-surface-muted ring-2 transition",
-                  settings.background === bg.value
-                    ? "ring-accent"
-                    : "ring-transparent hover:ring-line",
-                )}
-              >
-                {bg.value ? (
-                  <img
-                    src={bg.value}
-                    alt={bg.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="grid h-full place-items-center text-[11px] font-medium text-ink-soft">
-                    {bg.name}
-                  </span>
-                )}
-              </button>
+              <Tooltip key={bg.name} label={bg.name}>
+                <button
+                  type="button"
+                  aria-label={bg.name}
+                  onClick={() => onUpdate({ background: bg.value })}
+                  className={cn(
+                    "relative aspect-video overflow-hidden rounded-[var(--radius-inner)] bg-surface-muted ring-2 transition",
+                    settings.background === bg.value
+                      ? "ring-accent"
+                      : "ring-transparent hover:ring-line",
+                  )}
+                >
+                  {bg.value ? (
+                    <img
+                      src={bg.value}
+                      alt={bg.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="grid h-full place-items-center text-[11px] font-medium text-ink-soft">
+                      {bg.name}
+                    </span>
+                  )}
+                </button>
+              </Tooltip>
             ))}
           </div>
         </div>

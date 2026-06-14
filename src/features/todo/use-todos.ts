@@ -3,7 +3,10 @@ import { createId } from "../../lib/id";
 import { useLocalStorage } from "../../lib/use-local-storage";
 import { TASK_STATUSES, type Task, type TaskStatus } from "./task-types";
 
-export type TaskDraft = Pick<Task, "title" | "description" | "dueDate" | "status">;
+export type TaskDraft = Pick<
+  Task,
+  "title" | "description" | "dueDate" | "status" | "checklist"
+>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -60,7 +63,7 @@ export function useTodos() {
   }
 
   /** Inline auto-save: merge a partial patch into one task. */
-  function patchTask(id: string, patch: Partial<TaskDraft>) {
+  function patchTask(id: string, patch: Partial<Omit<Task, "id" | "createdAt">>) {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     );

@@ -21,7 +21,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, ListChecks, Plus } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { dueState, formatShortDate } from "../../lib/date";
 import {
@@ -36,6 +36,8 @@ type KanbanBoardProps = {
   byStatus: Record<TaskStatus, Task[]>;
   onReorder: (tasks: Task[]) => void;
   onOpen: (task: Task) => void;
+  /** Create a new task pre-set to a column's status (Trello-style add). */
+  onAddTask: (status: TaskStatus) => void;
   /** Auto-hide done tasks older than this many days (0 = never). */
   archiveDays: number;
 };
@@ -56,6 +58,7 @@ export function KanbanBoard({
   byStatus,
   onReorder,
   onOpen,
+  onAddTask,
   archiveDays,
 }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -172,6 +175,7 @@ export function KanbanBoard({
             ids={columns[status]}
             taskMap={taskMap}
             onOpen={onOpen}
+            onAddTask={onAddTask}
             archiveDays={archiveDays}
           />
         ))}
@@ -188,10 +192,18 @@ type ColumnProps = {
   ids: string[];
   taskMap: Map<string, Task>;
   onOpen: (task: Task) => void;
+  onAddTask: (status: TaskStatus) => void;
   archiveDays: number;
 };
 
-function Column({ status, ids, taskMap, onOpen, archiveDays }: ColumnProps) {
+function Column({
+  status,
+  ids,
+  taskMap,
+  onOpen,
+  onAddTask,
+  archiveDays,
+}: ColumnProps) {
   const meta = STATUS_META[status];
   // The column id doubles as a droppable so empty columns still accept drops.
   const { setNodeRef, isOver } = useDroppable({ id: status });
@@ -251,6 +263,14 @@ function Column({ status, ids, taskMap, onOpen, archiveDays }: ColumnProps) {
             : `+ ${archivedIds.length} task cũ (đã xong > ${archiveDays} ngày)`}
         </button>
       ) : null}
+      <button
+        type="button"
+        onClick={() => onAddTask(status)}
+        className="mt-1.5 flex w-full shrink-0 items-center gap-1.5 rounded-[0.85rem] px-2 py-2 text-left text-[13px] font-medium text-ink-faint transition-colors hover:bg-surface-hover hover:text-ink-soft"
+      >
+        <Plus size={15} className="shrink-0" />
+        Thêm task
+      </button>
     </div>
   );
 }
@@ -274,7 +294,7 @@ function SortableTaskCard({
       {...listeners}
       className={cn(
         "w-full cursor-grab rounded-[0.85rem] bg-surface p-3 text-left",
-        "ring-1 ring-transparent hover:ring-line active:cursor-grabbing",
+        "ring-1 ring-inset ring-transparent hover:ring-line active:cursor-grabbing",
         // The lifted copy lives in the DragOverlay; leave a faint gap here.
         isDragging && "opacity-40",
       )}
@@ -287,6 +307,8 @@ function SortableTaskCard({
 /** Visual content of a task card, shared by the column items and drag overlay. */
 function TaskCardBody({ task, overlay }: { task: Task; overlay?: boolean }) {
   const due = dueState(task.dueDate);
+  const checklistTotal = task.checklist?.length ?? 0;
+  const checklistDone = task.checklist?.filter((c) => c.done).length ?? 0;
   const content = (
     <>
       <p className="line-clamp-2 text-[13px] font-medium leading-snug text-ink">
@@ -298,18 +320,36 @@ function TaskCardBody({ task, overlay }: { task: Task; overlay?: boolean }) {
           {task.description}
         </p>
       ) : null}
-      {task.dueDate && task.status !== "done" ? (
-        <span
-          className={cn(
-            "mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-            due === "overdue" && "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300",
-            due === "today" && "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-            due === "upcoming" && "bg-surface-muted text-ink-soft",
-          )}
-        >
-          <CalendarClock size={12} />
-          {formatShortDate(task.dueDate)}
-        </span>
+      {/* Done cards stay minimal — these meta chips add no value there. */}
+      {task.status !== "done" && (task.dueDate || checklistTotal > 0) ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {task.dueDate ? (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                due === "overdue" && "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300",
+                due === "today" && "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+                due === "upcoming" && "bg-surface-muted text-ink-soft",
+              )}
+            >
+              <CalendarClock size={12} />
+              {formatShortDate(task.dueDate)}
+            </span>
+          ) : null}
+          {checklistTotal > 0 ? (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums",
+                checklistDone === checklistTotal
+                  ? "bg-accent-soft text-accent-ink"
+                  : "bg-surface-muted text-ink-soft",
+              )}
+            >
+              <ListChecks size={12} />
+              {checklistDone}/{checklistTotal}
+            </span>
+          ) : null}
+        </div>
       ) : null}
     </>
   );
