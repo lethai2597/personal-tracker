@@ -228,6 +228,8 @@ export const vi: Messages = {
 				addEventForDay: "Thêm sự kiện ngày này",
 				syncNow: "Đồng bộ Google Calendar ngay",
 				googleEvent: "Google",
+				localTask: "Nội bộ",
+				linkedTask: "Đã liên kết",
 				allDay: "Cả ngày",
 				eventDialog: {
 					addTitle: "Thêm sự kiện Google Calendar",

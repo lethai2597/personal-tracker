@@ -220,6 +220,8 @@ export const en = {
 				addEventForDay: "Add event for this day",
 				syncNow: "Sync Google Calendar now",
 				googleEvent: "Google",
+				localTask: "Local",
+				linkedTask: "Google Linked",
 				allDay: "All day",
 				eventDialog: {
 					addTitle: "Add Google Calendar event",

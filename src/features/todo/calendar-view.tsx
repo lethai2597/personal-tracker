@@ -190,11 +190,12 @@ export function CalendarView({ tasks, googleCalendar, onOpen, onCreateOn, onConv
                         onOpen(item.task);
                       }}
                       className={cn(
-                        "cursor-pointer truncate rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-tight",
+                        "flex cursor-pointer items-center justify-between gap-1 truncate rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-tight",
                         STATUS_META[item.task.status].chip,
                       )}
                     >
-                      {item.task.title}
+                      <span className="truncate">{item.task.title}</span>
+                      {item.task.source === "google" && <CalendarClock size={10} className="shrink-0 opacity-60" />}
                     </span>
                   ) : (
                     <span
@@ -244,9 +245,14 @@ export function CalendarView({ tasks, googleCalendar, onOpen, onCreateOn, onConv
                     className="flex w-full items-start gap-3 rounded-[var(--radius-inner)] bg-surface-sunken px-3 py-2.5 text-left transition-colors hover:bg-surface-muted"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">
-                        {item.task.title}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-medium text-ink">
+                          {item.task.title}
+                        </p>
+                        <span className="shrink-0 rounded-[0.25rem] bg-surface-muted px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-ink-soft uppercase">
+                          {item.task.source === "google" ? t.calendar.linkedTask : t.calendar.localTask}
+                        </span>
+                      </div>
                       {item.task.description ? (
                         <p className="mt-0.5 truncate text-xs text-ink-faint">
                           {item.task.description}

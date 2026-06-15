@@ -53,18 +53,10 @@ export function TodoCard({ className, archiveDays, googleCalendar }: TodoCardPro
   }
 
   async function addTaskAndSync(draft: TaskDialogDraft) {
-    const { googleCalendarId, ...taskDraft } = draft;
-    const created = await addTask(taskDraft);
-    if (!created || !googleCalendarId || !created.dueDate) return;
-
-    await googleCalendar.createEvent({
-      calendarId: googleCalendarId,
-      title: created.title,
-      description: created.description,
-      start: created.dueDate,
-      end: nextDateIso(created.dueDate),
-      allDay: true,
-    });
+    // Pass the full draft including googleCalendarId to the backend
+    // The backend will create the Google event and save the googleEventId,
+    // ensuring the task and event are properly linked.
+    await addTask(draft);
   }
 
   async function convertEventToTask(event: GoogleCalendarEvent) {
