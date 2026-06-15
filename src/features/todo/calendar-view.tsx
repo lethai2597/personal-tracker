@@ -41,10 +41,11 @@ export function CalendarView({ tasks, googleCalendar, onOpen, onCreateOn, onConv
   const byDate = useMemo(() => {
     const map = new Map<string, Task[]>();
     for (const t of tasks) {
-      if (!t.dueDate) continue;
-      const list = map.get(t.dueDate) ?? [];
+      const dateKey = t.startAt ? t.startAt.slice(0, 10) : t.dueDate;
+      if (!dateKey) continue;
+      const list = map.get(dateKey) ?? [];
       list.push(t);
-      map.set(t.dueDate, list);
+      map.set(dateKey, list);
     }
     return map;
   }, [tasks]);
