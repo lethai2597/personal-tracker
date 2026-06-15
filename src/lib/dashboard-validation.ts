@@ -15,6 +15,16 @@ export const taskDraftSchema = z.object({
   status: z.enum(TASK_STATUSES),
   checklist: z.array(checklistItemSchema).default([]),
   doneAt: z.number().int().nonnegative().optional(),
+  source: z.enum(["local", "google"]).default("local"),
+  syncStatus: z.enum(["local_only", "synced", "pending_sync", "error"]).default("local_only"),
+  startAt: z.string().max(32).optional(),
+  endAt: z.string().max(32).optional(),
+  allDay: z.boolean().default(false),
+  location: z.string().max(1000).optional(),
+  googleCalendarId: z.string().max(255).optional(),
+  googleEventId: z.string().max(1024).optional(),
+  googleEventLink: z.string().url().max(2048).optional(),
+  googleEventPayload: z.record(z.string(), z.any()).optional(),
 });
 
 export const taskSchema = taskDraftSchema.extend({

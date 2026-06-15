@@ -41,6 +41,16 @@ export async function POST(request: NextRequest) {
     doneAt: task.doneAt ?? null,
     createdAt: task.createdAt,
     position: current.length,
+    source: task.source,
+    syncStatus: task.syncStatus,
+    startAt: task.startAt ?? null,
+    endAt: task.endAt ?? null,
+    allDay: task.allDay ?? false,
+    location: task.location ?? "",
+    googleCalendarId: task.googleCalendarId ?? null,
+    googleEventId: task.googleEventId ?? null,
+    googleEventLink: task.googleEventLink ?? null,
+    googleEventPayload: task.googleEventPayload ?? null,
   });
   return NextResponse.json(task, { status: 201 });
 }

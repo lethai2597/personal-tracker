@@ -68,6 +68,11 @@ export function buildTasks(): Task[] {
     dueDate: dueOffset === null ? "" : isoInDays(dueOffset),
     status,
     createdAt: now - (SAMPLE_TASKS.length - i) * 1000,
+    source: "local",
+    syncStatus: "local_only",
+    startAt: dueOffset === null ? undefined : isoInDays(dueOffset),
+    endAt: dueOffset === null ? undefined : isoInDays(dueOffset),
+    allDay: dueOffset !== null,
   }));
 }
 

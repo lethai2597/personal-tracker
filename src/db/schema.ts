@@ -7,6 +7,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -77,7 +78,19 @@ export const todos = pgTable("todos", {
   doneAt: bigint("done_at", { mode: "number" }),
   createdAt: bigint("created_at", { mode: "number" }).notNull(),
   position: integer("position").notNull().default(0),
-});
+  source: text("source").notNull().default("local"),
+  syncStatus: text("sync_status").notNull().default("local_only"),
+  startAt: text("start_at"),
+  endAt: text("end_at"),
+  allDay: boolean("all_day").notNull().default(false),
+  location: text("location").default(""),
+  googleCalendarId: text("google_calendar_id"),
+  googleEventId: text("google_event_id"),
+  googleEventLink: text("google_event_link"),
+  googleEventPayload: jsonb("google_event_payload"),
+}, (table) => [
+  uniqueIndex("todos_user_calendar_event_idx").on(table.userId, table.googleCalendarId, table.googleEventId),
+]);
 
 export const notes = pgTable("notes", {
   userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),

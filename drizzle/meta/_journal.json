@@ -29,6 +29,13 @@
       "when": 1781513358118,
       "tag": "0003_strange_valkyrie",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781524013206,
+      "tag": "0004_lively_yellow_claw",
+      "breakpoints": true
     }
   ]
 }

@@ -20,6 +20,16 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   if (body.status !== undefined) changes.status = body.status;
   if (body.checklist !== undefined) changes.checklist = JSON.stringify(body.checklist);
   if (body.doneAt !== undefined) changes.doneAt = body.doneAt;
+  if (body.source !== undefined) changes.source = body.source;
+  if (body.syncStatus !== undefined) changes.syncStatus = body.syncStatus;
+  if (body.startAt !== undefined) changes.startAt = body.startAt ?? null;
+  if (body.endAt !== undefined) changes.endAt = body.endAt ?? null;
+  if (body.allDay !== undefined) changes.allDay = body.allDay;
+  if (body.location !== undefined) changes.location = body.location;
+  if (body.googleCalendarId !== undefined) changes.googleCalendarId = body.googleCalendarId ?? null;
+  if (body.googleEventId !== undefined) changes.googleEventId = body.googleEventId ?? null;
+  if (body.googleEventLink !== undefined) changes.googleEventLink = body.googleEventLink ?? null;
+  if (body.googleEventPayload !== undefined) changes.googleEventPayload = body.googleEventPayload ?? null;
   await db
     .update(todos)
     .set(changes)

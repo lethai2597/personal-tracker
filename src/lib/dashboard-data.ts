@@ -13,7 +13,7 @@ import { createId } from "./id";
 import { DEFAULT_SETTINGS, type Settings } from "./settings";
 import type { Bookmark } from "@/features/bookmarks/use-bookmarks";
 import type { Habit } from "@/features/habits/use-habits";
-import type { Task } from "@/features/todo/task-types";
+import type { Task, TaskSource, TaskSyncStatus } from "@/features/todo/task-types";
 
 export function parseChecklist(value: string): Task["checklist"] {
   try {
@@ -29,6 +29,16 @@ export function toTask(row: typeof todos.$inferSelect): Task {
     title: row.title,
     description: row.description,
     dueDate: row.dueDate,
+    source: row.source as TaskSource,
+    syncStatus: row.syncStatus as TaskSyncStatus,
+    startAt: row.startAt ?? undefined,
+    endAt: row.endAt ?? undefined,
+    allDay: row.allDay,
+    location: row.location ?? undefined,
+    googleCalendarId: row.googleCalendarId ?? undefined,
+    googleEventId: row.googleEventId ?? undefined,
+    googleEventLink: row.googleEventLink ?? undefined,
+    googleEventPayload: (row.googleEventPayload as Record<string, any>) ?? undefined,
     status: row.status as Task["status"],
     createdAt: row.createdAt,
     doneAt: row.doneAt ?? undefined,
@@ -136,6 +146,16 @@ export async function replaceTodos(userId: string, next: Task[]) {
         doneAt: task.doneAt ?? null,
         createdAt: task.createdAt,
         position: index,
+        source: task.source,
+        syncStatus: task.syncStatus,
+        startAt: task.startAt ?? null,
+        endAt: task.endAt ?? null,
+        allDay: task.allDay ?? false,
+        location: task.location ?? "",
+        googleCalendarId: task.googleCalendarId ?? null,
+        googleEventId: task.googleEventId ?? null,
+        googleEventLink: task.googleEventLink ?? null,
+        googleEventPayload: task.googleEventPayload ?? null,
       })),
     );
   }
