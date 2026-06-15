@@ -5,7 +5,8 @@ import { todos } from "@/db/schema";
 import { getTodos } from "@/lib/dashboard-data";
 import { parseJson, taskPatchSchema } from "@/lib/dashboard-validation";
 import { requireUserId, unauthorized } from "@/lib/session";
-import { deleteGoogleCalendarEvent, updateGoogleCalendarEvent, type GoogleCalendarEventDraft } from "@/lib/google-calendar";
+import { type GoogleCalendarEventDraft } from "@/lib/google-calendar";
+import { googleCalendarQueue } from "@/lib/queue/google-calendar-queue";
 
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -52,39 +53,45 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     body.endAt !== undefined ||
     body.allDay !== undefined;
 
+  let draftForQueue: GoogleCalendarEventDraft | undefined;
+
   if (isCalendarTask && hasSyncableChanges) {
-    try {
-      const startMs = body.startAt !== undefined ? body.startAt : existing.startAt;
-      const dueMs = body.dueDate !== undefined ? body.dueDate : existing.dueDate;
-      const endMs = body.endAt !== undefined ? body.endAt : existing.endAt;
-      
-      const draft: GoogleCalendarEventDraft = {
-        title: body.title ?? existing.title,
-        description: body.description ?? existing.description ?? undefined,
-        location: body.location ?? existing.location ?? undefined,
-        start: startMs ? new Date(startMs).toISOString() : dueMs ? new Date(dueMs).toISOString() : undefined,
-        end: endMs ? new Date(endMs).toISOString() : undefined,
-        allDay: body.allDay ?? existing.allDay ?? undefined,
-      };
-      const event = await updateGoogleCalendarEvent(
-        userId,
-        existing.googleCalendarId!,
-        existing.googleEventId!,
-        draft
-      );
-      changes.googleEventLink = event.htmlLink ?? null;
-      changes.googleEventPayload = { etag: event.etag, updated: event.updated };
-      changes.syncStatus = "synced";
-    } catch (e) {
-      console.error("Failed to update Google Calendar event", e);
-      changes.syncStatus = "error";
-    }
+    changes.syncStatus = "pending_sync";
+    const startMs = body.startAt !== undefined ? body.startAt : existing.startAt;
+    const dueMs = body.dueDate !== undefined ? body.dueDate : existing.dueDate;
+    const endMs = body.endAt !== undefined ? body.endAt : existing.endAt;
+    
+    draftForQueue = {
+      title: body.title ?? existing.title,
+      description: body.description ?? existing.description ?? undefined,
+      location: body.location ?? existing.location ?? undefined,
+      start: startMs ? new Date(startMs).toISOString() : dueMs ? new Date(dueMs).toISOString() : undefined,
+      end: endMs ? new Date(endMs).toISOString() : undefined,
+      allDay: body.allDay ?? existing.allDay ?? undefined,
+    };
   }
 
   await db
     .update(todos)
     .set(changes)
     .where(and(eq(todos.userId, userId), eq(todos.id, id)));
+
+  if (isCalendarTask && draftForQueue) {
+    try {
+      await googleCalendarQueue.add("updateEvent", {
+        type: "updateEvent",
+        userId,
+        todoId: id,
+        calendarId: existing.googleCalendarId!,
+        eventId: existing.googleEventId!,
+        draft: draftForQueue,
+      });
+    } catch (e) {
+      console.error("Failed to enqueue Google Calendar update", e);
+      await db.update(todos).set({ syncStatus: "error" }).where(and(eq(todos.userId, userId), eq(todos.id, id)));
+    }
+  }
+
   return NextResponse.json(await getTodos(userId));
 }
 
@@ -100,12 +107,18 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
 
   if (existing?.googleCalendarId && existing?.googleEventId) {
     try {
-      await deleteGoogleCalendarEvent(userId, existing.googleCalendarId, existing.googleEventId);
+      await googleCalendarQueue.add("deleteEvent", {
+        type: "deleteEvent",
+        userId,
+        calendarId: existing.googleCalendarId,
+        eventId: existing.googleEventId,
+      });
     } catch (e) {
-      console.error("Failed to delete Google Calendar event", e);
+      console.error("Failed to enqueue Google Calendar delete", e);
     }
   }
 
   await db.delete(todos).where(and(eq(todos.userId, userId), eq(todos.id, id)));
   return NextResponse.json(await getTodos(userId));
 }
+

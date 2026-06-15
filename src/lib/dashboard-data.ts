@@ -132,34 +132,41 @@ export async function getTodos(userId: string) {
 }
 
 export async function replaceTodos(userId: string, next: Task[]) {
-  await db.delete(todos).where(eq(todos.userId, userId));
-  if (next.length) {
-    await db.insert(todos).values(
-      next.map((task, index) => ({
-        id: task.id,
-        userId,
-        title: task.title,
-        description: task.description,
-        dueDate: task.dueDate,
-        status: task.status,
-        checklist: JSON.stringify(task.checklist ?? []),
-        doneAt: task.doneAt ?? null,
-        createdAt: task.createdAt,
-        position: index,
-        source: task.source,
-        syncStatus: task.syncStatus,
-        startAt: task.startAt ?? null,
-        endAt: task.endAt ?? null,
-        allDay: task.allDay ?? false,
-        location: task.location ?? "",
-        googleCalendarId: task.googleCalendarId ?? null,
-        googleEventId: task.googleEventId ?? null,
-        googleEventLink: task.googleEventLink ?? null,
-        googleEventPayload: task.googleEventPayload ?? null,
-      })),
-    );
-  }
-  return getTodos(userId);
+  return await db.transaction(async (tx) => {
+    await tx.delete(todos).where(eq(todos.userId, userId));
+    if (next.length) {
+      await tx.insert(todos).values(
+        next.map((task, index) => ({
+          id: task.id,
+          userId,
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate,
+          status: task.status,
+          checklist: JSON.stringify(task.checklist ?? []),
+          doneAt: task.doneAt ?? null,
+          createdAt: task.createdAt,
+          position: index,
+          source: task.source,
+          syncStatus: task.syncStatus,
+          startAt: task.startAt ?? null,
+          endAt: task.endAt ?? null,
+          allDay: task.allDay ?? false,
+          location: task.location ?? "",
+          googleCalendarId: task.googleCalendarId ?? null,
+          googleEventId: task.googleEventId ?? null,
+          googleEventLink: task.googleEventLink ?? null,
+          googleEventPayload: task.googleEventPayload ?? null,
+        })),
+      );
+    }
+    const rows = await tx
+      .select()
+      .from(todos)
+      .where(eq(todos.userId, userId))
+      .orderBy(asc(todos.position), asc(todos.createdAt));
+    return rows.map(toTask);
+  });
 }
 
 export async function getBookmarks(userId: string) {
