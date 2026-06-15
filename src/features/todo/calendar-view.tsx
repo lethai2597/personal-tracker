@@ -58,6 +58,14 @@ export function CalendarView({ tasks, googleCalendar, onOpen, onCreateOn, onConv
     const map = new Map<string, GoogleCalendarEvent[]>();
     for (const event of googleCalendar.events) {
       if (linkedEventIds.has(event.id)) continue;
+      
+      // If a task is pending sync, it might have been created on Google Calendar 
+      // but the local task doesn't have the event ID yet. Hide the event to prevent duplication.
+      const isPending = tasks.some(
+        (t) => t.googleCalendarId === event.calendarId && !t.googleEventId && t.title === event.title
+      );
+      if (isPending) continue;
+
       const iso = eventDate(event);
       const list = map.get(iso) ?? [];
       list.push(event);
