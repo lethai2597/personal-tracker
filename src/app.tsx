@@ -1,10 +1,13 @@
+"use client";
+
 import { motion } from "motion/react";
 import { useState } from "react";
 import { DashboardHeader } from "./components/dashboard-header";
 import { SettingsModal } from "./components/settings-modal";
 import { StorageAlert } from "./components/storage-alert";
 import { WelcomeModal } from "./components/welcome-modal";
-import { useLocalStorage } from "./lib/use-local-storage";
+import { apiJson } from "./lib/api-client";
+import { useApiState } from "./lib/use-api-state";
 import { useSettings } from "./lib/use-settings";
 import { BookmarkCard } from "./features/bookmarks/bookmark-card";
 import { HabitCard } from "./features/habits/habit-card";
@@ -19,16 +22,28 @@ import { TodoCard } from "./features/todo/todo-card";
  * bottom row holds Bookmark + Habits. Personalization lives in
  * settings and is applied to the DOM by useSettings.
  */
-export function App() {
+export function App({ userEmail }: { userEmail: string }) {
   const { settings, update } = useSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [welcomed, setWelcomed] = useLocalStorage("pt.welcomed", false);
+  const { data: welcomed, setData: setWelcomed } = useApiState<boolean>(
+    "/api/welcome",
+    false,
+  );
+
+  function closeWelcome() {
+    setWelcomed(true);
+    void apiJson<boolean>("/api/welcome", {
+      method: "PATCH",
+      body: JSON.stringify({ welcomed: true }),
+    });
+  }
 
   return (
     <div className="min-h-screen p-2">
       <div className="flex flex-col gap-2 rounded-[2rem] bg-shell p-2 backdrop-blur-sm lg:h-[calc(100dvh-1rem)]">
         <DashboardHeader
           title={settings.boardTitle}
+          userEmail={userEmail}
           onOpenSettings={() => setSettingsOpen(true)}
         />
         <motion.div
@@ -60,7 +75,7 @@ export function App() {
         onUpdate={update}
       />
 
-      <WelcomeModal open={!welcomed} onClose={() => setWelcomed(true)} />
+      <WelcomeModal open={!welcomed} onClose={closeWelcome} />
 
       <StorageAlert />
     </div>

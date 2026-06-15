@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "../lib/cn";
 import { IconButton } from "./icon-button";
@@ -34,6 +34,11 @@ export function Modal({
   wide,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Escape closes; Tab cycles within the dialog (skips Radix portals).
   useEffect(() => {
@@ -75,6 +80,8 @@ export function Modal({
   // Portal to <body> so the fixed overlay always covers the full viewport.
   // The dashboard shell uses backdrop-filter, which makes it a containing
   // block for position:fixed — rendering inline would clip the overlay to it.
+  if (!mounted) return null;
+
   return createPortal(
     <AnimatePresence>
       {open ? (

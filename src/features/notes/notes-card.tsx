@@ -1,13 +1,32 @@
 import { NotebookPen } from "lucide-react";
+import { useEffect } from "react";
 import { BentoCard } from "../../components/bento-card";
-import { useLocalStorage } from "../../lib/use-local-storage";
+import { apiJson } from "../../lib/api-client";
+import { useApiState } from "../../lib/use-api-state";
 
 /** A single free-form scratch note — no editor, no categories, just text. */
 export function NotesCard({ className }: { className?: string }) {
   // Free text changes on every keystroke — debounce the write so a large note
   // doesn't re-serialize the whole string each key press.
-  const [text, setText] = useLocalStorage("pt.note", "", { debounce: 400 });
+  const { data: text, setData: setText, loading, commit, reload } = useApiState<string>("/api/notes", "");
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+
+  useEffect(() => {
+    if (loading) return;
+    const timeout = window.setTimeout(() => {
+      void commit(
+        apiJson<string>("/api/notes", {
+          method: "PATCH",
+          body: JSON.stringify({ text }),
+        }),
+        async () => {
+          await reload();
+          return text;
+        },
+      );
+    }, 400);
+    return () => window.clearTimeout(timeout);
+  }, [commit, loading, reload, text]);
 
   return (
     <BentoCard
