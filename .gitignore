@@ -12,3 +12,6 @@ dist
 *.log
 npm-debug.log*
 .gitnexus
+
+# Environment variables
+.env

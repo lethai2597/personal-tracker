@@ -5,6 +5,8 @@ import { DatePicker } from "../../components/ui/date-picker";
 import { TaskChecklist } from "./task-checklist";
 import { STATUS_META, TASK_STATUSES, type Task } from "./task-types";
 import type { TaskDraft } from "./use-todos";
+import { messages } from "../../lib/i18n";
+import { useLocale } from "../../components/locale-provider";
 
 type TaskDialogProps = {
   open: boolean;
@@ -29,6 +31,8 @@ const EMPTY: TaskDraft = {
  */
 export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
   const [draft, setDraft] = useState<TaskDraft>(EMPTY);
+  const locale = useLocale();
+  const t = messages[locale].features.todo;
 
   useEffect(() => {
     if (!open) return;
@@ -86,7 +90,7 @@ export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
         {/* Title. */}
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
-            Tiêu đề
+            {t.dialog.titleLabel}
           </p>
           <input
             autoFocus
@@ -95,7 +99,7 @@ export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
             onKeyDown={(e) => {
               if (e.key === "Enter") submit();
             }}
-            placeholder="Tên task..."
+            placeholder={t.dialog.titlePlaceholder}
             className="w-full rounded-[var(--radius-inner)] bg-surface-muted px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:bg-surface-sunken focus:ring-2 focus:ring-accent/40"
           />
         </div>
@@ -103,19 +107,19 @@ export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
         {/* Due date. */}
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
-            Hạn chót
+            {t.dialog.dueDateLabel}
           </p>
           <DatePicker
             value={draft.dueDate}
             onChange={(iso) => setDraft((d) => ({ ...d, dueDate: iso }))}
-            placeholder="Thêm hạn chót"
+            placeholder={t.dialog.dueDatePickerPlaceholder}
           />
         </div>
 
         {/* Description. */}
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
-            Mô tả
+            {t.dialog.descriptionLabel}
           </p>
           <textarea
             rows={4}
@@ -123,7 +127,7 @@ export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
             onChange={(e) =>
               setDraft((d) => ({ ...d, description: e.target.value }))
             }
-            placeholder="Thêm chi tiết (không bắt buộc)"
+            placeholder={t.dialog.descriptionPlaceholder}
             className="w-full resize-none rounded-[var(--radius-inner)] bg-surface-muted p-3 text-sm leading-relaxed text-ink outline-none transition-colors placeholder:text-ink-faint focus:bg-surface-sunken focus:ring-2 focus:ring-accent/40"
           />
         </div>
@@ -141,7 +145,7 @@ export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
           onClick={submit}
           className="w-full rounded-full bg-btn py-2.5 text-sm font-semibold text-btn-ink transition-colors hover:opacity-90"
         >
-          Thêm task
+          {t.dialog.submit}
         </button>
       </div>
     </Modal>

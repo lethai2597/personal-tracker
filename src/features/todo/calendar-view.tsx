@@ -5,6 +5,8 @@ import { toIsoDate, todayIso } from "../../lib/date";
 import { IconButton } from "../../components/icon-button";
 import { Modal } from "../../components/modal";
 import { STATUS_META, type Task } from "./task-types";
+import { messages, type Locale } from "../../lib/i18n";
+import { useLocale } from "../../components/locale-provider";
 
 type CalendarViewProps = {
   tasks: Task[];
@@ -12,15 +14,14 @@ type CalendarViewProps = {
   onCreateOn: (dateIso: string) => void;
 };
 
-const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const MONTHS = Array.from({ length: 12 }, (_, i) => `Tháng ${i + 1}`);
-
 /** Month grid that drops each task onto its due date. */
 export function CalendarView({ tasks, onOpen, onCreateOn }: CalendarViewProps) {
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
   });
+  const locale = useLocale();
+  const t = messages[locale].features.todo;
   /** ISO date whose task list is shown in the day-detail dialog, or null. */
   const [dayView, setDayView] = useState<string | null>(null);
 
@@ -56,21 +57,21 @@ export function CalendarView({ tasks, onOpen, onCreateOn }: CalendarViewProps) {
     <div className="flex h-full flex-col">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ink">
-          {MONTHS[cursor.month]} {cursor.year}
+          {t.calendar.months[cursor.month]} {cursor.year}
         </h3>
         <div className="flex items-center gap-1.5">
-          <IconButton aria-label="Tháng trước" onClick={() => shift(-1)}>
+          <IconButton aria-label={t.calendar.prevMonth} onClick={() => shift(-1)}>
             <ChevronLeft size={18} />
           </IconButton>
-          <IconButton aria-label="Tháng sau" onClick={() => shift(1)}>
+          <IconButton aria-label={t.calendar.nextMonth} onClick={() => shift(1)}>
             <ChevronRight size={18} />
           </IconButton>
         </div>
       </div>
 
       <div className="mb-1.5 grid grid-cols-7 gap-2">
-        {WEEKDAYS.map((d) => (
-          <div key={d} className="text-center text-[11px] font-medium text-ink-faint">
+        {t.calendar.weekdays.map((d, index) => (
+          <div key={index} className="text-center text-[11px] font-medium text-ink-faint">
             {d}
           </div>
         ))}
@@ -131,7 +132,7 @@ export function CalendarView({ tasks, onOpen, onCreateOn }: CalendarViewProps) {
 
       <Modal
         open={dayView !== null}
-        title={dayView ? formatFullDate(dayView) : ""}
+        title={dayView ? formatFullDate(dayView, locale) : ""}
         onClose={() => setDayView(null)}
       >
         <div className="space-y-3">
@@ -170,7 +171,7 @@ export function CalendarView({ tasks, onOpen, onCreateOn }: CalendarViewProps) {
             </div>
           ) : (
             <p className="py-2 text-center text-sm text-ink-faint">
-              Chưa có task nào trong ngày này.
+              {t.calendar.empty}
             </p>
           )}
 
@@ -183,7 +184,7 @@ export function CalendarView({ tasks, onOpen, onCreateOn }: CalendarViewProps) {
             className="flex w-full items-center justify-center gap-2 rounded-full bg-btn py-2.5 text-sm font-semibold text-btn-ink transition-colors hover:opacity-90"
           >
             <Plus size={16} />
-            Thêm task ngày này
+            {t.calendar.addTaskForDay}
           </button>
         </div>
       </Modal>
@@ -191,19 +192,15 @@ export function CalendarView({ tasks, onOpen, onCreateOn }: CalendarViewProps) {
   );
 }
 
-/** Full Vietnamese date label for the day-detail dialog title. */
-function formatFullDate(iso: string): string {
+/** Full localized date label for the day-detail dialog title. */
+function formatFullDate(iso: string, locale: Locale): string {
   const d = new Date(iso + "T00:00:00");
-  const weekday = [
-    "Chủ nhật",
-    "Thứ Hai",
-    "Thứ Ba",
-    "Thứ Tư",
-    "Thứ Năm",
-    "Thứ Sáu",
-    "Thứ Bảy",
-  ][d.getDay()];
-  return `${weekday}, ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  const t = messages[locale].features.todo;
+  const weekday = t.calendar.weekdayFullNames[d.getDay()];
+  if (locale === "vi") {
+    return `${weekday}, ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  }
+  return `${weekday}, ${t.calendar.months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 type Cell = { iso: string; day: number; inMonth: boolean };

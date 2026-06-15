@@ -7,6 +7,8 @@ import { Modal } from "../../components/modal";
 import { DatePicker } from "../../components/ui/date-picker";
 import { TaskChecklist } from "./task-checklist";
 import { STATUS_META, TASK_STATUSES, type Task } from "./task-types";
+import { messages } from "../../lib/i18n";
+import { useLocale } from "../../components/locale-provider";
 
 type TaskDetailDialogProps = {
   task: Task | null;
@@ -32,6 +34,8 @@ export function TaskDetailDialog({
   const [editingDesc, setEditingDesc] = useState(false);
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
+  const locale = useLocale();
+  const t = messages[locale].features.todo;
 
   // Re-seed local buffers whenever a different task opens.
   useEffect(() => {
@@ -61,9 +65,9 @@ export function TaskDetailDialog({
 
   async function handleDelete() {
     const ok = await confirm({
-      title: "Xoá task?",
-      message: `"${task!.title}" sẽ bị xoá vĩnh viễn, không khôi phục được.`,
-      confirmLabel: "Xoá",
+      title: t.detail.deleteTitle,
+      message: t.detail.deleteMessage(task!.title),
+      confirmLabel: t.detail.deleteConfirm,
       danger: true,
     });
     if (ok) {
@@ -104,8 +108,8 @@ export function TaskDetailDialog({
 
   const deleteAction = (
     <IconButton
-      aria-label="Xoá task"
-      title="Xoá task"
+      aria-label={t.detail.deleteTooltip}
+      title={t.detail.deleteTooltip}
       onClick={handleDelete}
       className="bg-transparent text-ink-faint hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/15"
     >
@@ -153,19 +157,19 @@ export function TaskDetailDialog({
         {/* Due date — change saves immediately. */}
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
-            Hạn chót
+            {t.detail.dueDateLabel}
           </p>
           <DatePicker
             value={task.dueDate}
             onChange={(iso) => onPatch({ dueDate: iso })}
-            placeholder="Thêm hạn chót"
+            placeholder={t.detail.dueDatePlaceholder}
           />
         </div>
 
         {/* Description — click to edit inline. */}
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
-            Mô tả
+            {t.detail.descriptionLabel}
           </p>
           {editingDesc ? (
             <textarea
@@ -181,7 +185,7 @@ export function TaskDetailDialog({
                   setEditingDesc(false);
                 }
               }}
-              placeholder="Thêm chi tiết..."
+              placeholder={t.detail.descriptionPlaceholder}
               className="w-full resize-none rounded-[var(--radius-inner)] bg-surface-sunken p-3 text-sm leading-relaxed text-ink outline-none ring-2 ring-accent/40 placeholder:text-ink-faint"
             />
           ) : (
@@ -193,7 +197,7 @@ export function TaskDetailDialog({
                 task.description ? "text-ink" : "text-ink-faint",
               )}
             >
-              {task.description || "Thêm chi tiết..."}
+              {task.description || t.detail.descriptionPlaceholder}
             </button>
           )}
         </div>

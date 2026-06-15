@@ -1,5 +1,5 @@
 import { Calendar, KanbanSquare, ListChecks, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BentoCard } from "../../components/bento-card";
 import { cn } from "../../lib/cn";
 import { useLocalStorage } from "../../lib/use-local-storage";
@@ -9,6 +9,8 @@ import { TaskDetailDialog } from "./task-detail-dialog";
 import { TaskDialog } from "./task-dialog";
 import type { Task, TaskStatus } from "./task-types";
 import { useTodos } from "./use-todos";
+import { messages } from "../../lib/i18n";
+import { useLocale } from "../../components/locale-provider";
 
 type View = "board" | "calendar";
 
@@ -19,12 +21,21 @@ export function TodoCard({ className, archiveDays }: TodoCardProps) {
   const { tasks, byStatus, addTask, patchTask, reorderTasks, removeTask } =
     useTodos();
   const [view, setView] = useLocalStorage<View>("pt.todo-view", "board");
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Creating uses the quick form; opening an existing card uses the detail view.
   const [createTask, setCreateTask] = useState<Task | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const detailTask = detailId
     ? (tasks.find((t) => t.id === detailId) ?? null)
     : null;
+  const locale = useLocale();
+  const t = messages[locale].features.todo;
+  const activeView = mounted ? view : "board";
 
   function openNew(opts: { dueDate?: string; status?: TaskStatus } = {}) {
     setCreateTask({
@@ -37,27 +48,27 @@ export function TodoCard({ className, archiveDays }: TodoCardProps) {
   return (
     <BentoCard
       icon={ListChecks}
-      title="Todo"
+      title={t.title}
       scrollBody={false}
       className={className}
       action={
         <>
           <div className="flex items-center gap-1 rounded-full bg-surface-muted p-1">
             <ViewTab
-              active={view === "board"}
+              active={activeView === "board"}
               onClick={() => setView("board")}
-              label="Board"
+              label={t.viewBoard}
             >
               <KanbanSquare size={15} />
-              <span className="hidden sm:inline">Board</span>
+              <span className="hidden sm:inline">{t.viewBoard}</span>
             </ViewTab>
             <ViewTab
-              active={view === "calendar"}
+              active={activeView === "calendar"}
               onClick={() => setView("calendar")}
-              label="Lịch"
+              label={t.viewCalendar}
             >
               <Calendar size={15} />
-              <span className="hidden sm:inline">Lịch</span>
+              <span className="hidden sm:inline">{t.viewCalendar}</span>
             </ViewTab>
           </div>
           <button
@@ -66,12 +77,12 @@ export function TodoCard({ className, archiveDays }: TodoCardProps) {
             className="flex h-9 items-center gap-1.5 rounded-full bg-btn pl-3 pr-3.5 text-[13px] font-semibold text-btn-ink transition-colors hover:opacity-90"
           >
             <Plus size={16} />
-            Thêm task
+            {t.addTask}
           </button>
         </>
       }
     >
-      {view === "board" ? (
+      {activeView === "board" ? (
         <KanbanBoard
           byStatus={byStatus}
           onReorder={reorderTasks}
