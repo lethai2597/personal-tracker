@@ -20,10 +20,11 @@ type CalendarViewProps = {
   googleCalendar: UseGoogleCalendarResult;
   onOpen: (task: Task) => void;
   onCreateOn: (dateIso: string) => void;
+  onConvert?: (event: GoogleCalendarEvent) => void;
 };
 
 /** Month grid that drops each task onto its due date. */
-export function CalendarView({ tasks, googleCalendar, onOpen, onCreateOn }: CalendarViewProps) {
+export function CalendarView({ tasks, googleCalendar, onOpen, onCreateOn, onConvert }: CalendarViewProps) {
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
@@ -48,9 +49,14 @@ export function CalendarView({ tasks, googleCalendar, onOpen, onCreateOn }: Cale
     return map;
   }, [tasks]);
 
+  const linkedEventIds = useMemo(() => {
+    return new Set(tasks.map((t) => t.googleEventId).filter(Boolean));
+  }, [tasks]);
+
   const eventsByDate = useMemo(() => {
     const map = new Map<string, GoogleCalendarEvent[]>();
     for (const event of googleCalendar.events) {
+      if (linkedEventIds.has(event.id)) continue;
       const iso = eventDate(event);
       const list = map.get(iso) ?? [];
       list.push(event);
@@ -60,7 +66,7 @@ export function CalendarView({ tasks, googleCalendar, onOpen, onCreateOn }: Cale
       map.set(iso, events.sort((a, b) => eventSortKey(a).localeCompare(eventSortKey(b))));
     }
     return map;
-  }, [googleCalendar.events]);
+  }, [googleCalendar.events, linkedEventIds]);
 
   const cells = useMemo(
     () => buildMonthCells(cursor.year, cursor.month),
@@ -344,6 +350,7 @@ export function CalendarView({ tasks, googleCalendar, onOpen, onCreateOn }: Cale
           setEditEvent(event);
         }}
         onDelete={deleteGoogleEvent}
+        onConvert={onConvert}
         formatTimeRange={(event) => formatEventTimeRange(event, locale)}
       />
     </>

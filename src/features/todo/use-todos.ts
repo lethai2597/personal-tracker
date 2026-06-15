@@ -5,7 +5,7 @@ import { TASK_STATUSES, type Task, type TaskStatus } from "./task-types";
 
 export type TaskDraft = Pick<
   Task,
-  "title" | "description" | "dueDate" | "status" | "checklist"
+  "title" | "description" | "dueDate" | "status" | "checklist" | "googleCalendarId" | "googleEventId" | "googleEventLink" | "startAt" | "endAt" | "allDay" | "location"
 >;
 
 const DAY_MS = 24 * 60 * 60 * 1000;

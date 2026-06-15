@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
 import { cn } from "../../lib/cn";
 import { Modal } from "../../components/modal";
 import { DatePicker } from "../../components/ui/date-picker";
@@ -30,6 +31,10 @@ const EMPTY: TaskDialogDraft = {
   status: "todo",
   checklist: [],
   googleCalendarId: "",
+  startAt: "",
+  endAt: "",
+  allDay: false,
+  location: "",
 };
 
 /**
@@ -64,7 +69,11 @@ export function TaskDialog({
             dueDate: task.dueDate,
             status: task.status,
             checklist: task.checklist ?? [],
-            googleCalendarId: task.dueDate ? firstCalendarId : "",
+            googleCalendarId: task.googleCalendarId || (task.dueDate ? firstCalendarId : ""),
+            startAt: task.startAt ?? "",
+            endAt: task.endAt ?? "",
+            allDay: task.allDay ?? false,
+            location: task.location ?? "",
           }
         : { ...EMPTY, googleCalendarId: "" },
     );
@@ -75,7 +84,7 @@ export function TaskDialog({
     void onSubmit({
       ...draft,
       title: draft.title.trim(),
-      googleCalendarId: draft.dueDate ? draft.googleCalendarId : undefined,
+      googleCalendarId: (draft.startAt || draft.dueDate) ? draft.googleCalendarId : undefined,
     });
     onClose();
   }
@@ -129,27 +138,82 @@ export function TaskDialog({
           />
         </div>
 
-        {/* Due date. */}
+        {/* Date & Time */}
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
-            {t.dialog.dueDateLabel}
-          </p>
-          <DatePicker
-            value={draft.dueDate}
-            onChange={(iso) =>
-              setDraft((d) => ({
-                ...d,
-                dueDate: iso,
-                googleCalendarId: iso
-                  ? d.googleCalendarId || enabledGoogleCalendars[0]?.id || ""
-                  : "",
-              }))
-            }
-            placeholder={t.dialog.dueDatePickerPlaceholder}
-          />
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
+              {t.dialog.dateTimeLabel}
+            </p>
+            <label className="flex items-center gap-2 text-sm text-ink-faint cursor-pointer">
+              <input
+                type="checkbox"
+                checked={draft.allDay}
+                onChange={(e) => setDraft((d) => ({ ...d, allDay: e.target.checked }))}
+                className="rounded border-surface-muted accent-accent"
+              />
+              {t.dialog.allDayLabel}
+            </label>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {draft.allDay ? (
+              <>
+                <DatePicker
+                  value={draft.startAt ?? draft.dueDate}
+                  onChange={(iso) =>
+                    setDraft((d) => ({
+                      ...d,
+                      startAt: iso,
+                      dueDate: iso,
+                      googleCalendarId: iso ? d.googleCalendarId || enabledGoogleCalendars[0]?.id || "" : "",
+                    }))
+                  }
+                  placeholder={t.dialog.startDatePlaceholder}
+                />
+                <DatePicker
+                  value={draft.endAt ?? ""}
+                  onChange={(iso) => setDraft((d) => ({ ...d, endAt: iso }))}
+                  placeholder={t.dialog.endDatePlaceholder}
+                />
+              </>
+            ) : (
+              <>
+                <input
+                  type="datetime-local"
+                  value={
+                    draft.startAt && !isNaN(new Date(draft.startAt).getTime())
+                      ? format(new Date(draft.startAt), "yyyy-MM-dd'T'HH:mm")
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const iso = e.target.value ? new Date(e.target.value).toISOString() : "";
+                    setDraft((d) => ({
+                      ...d,
+                      startAt: iso,
+                      dueDate: iso ? iso.slice(0, 10) : "",
+                      googleCalendarId: iso ? d.googleCalendarId || enabledGoogleCalendars[0]?.id || "" : "",
+                    }));
+                  }}
+                  className="w-full flex-1 rounded-[var(--radius-inner)] bg-surface-muted px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:bg-surface-sunken focus:ring-2 focus:ring-accent/40"
+                />
+                <input
+                  type="datetime-local"
+                  value={
+                    draft.endAt && !isNaN(new Date(draft.endAt).getTime())
+                      ? format(new Date(draft.endAt), "yyyy-MM-dd'T'HH:mm")
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const iso = e.target.value ? new Date(e.target.value).toISOString() : "";
+                    setDraft((d) => ({ ...d, endAt: iso }));
+                  }}
+                  className="w-full flex-1 rounded-[var(--radius-inner)] bg-surface-muted px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:bg-surface-sunken focus:ring-2 focus:ring-accent/40"
+                />
+              </>
+            )}
+          </div>
         </div>
 
-        {googleCalendarConnected && draft.dueDate ? (
+        {googleCalendarConnected && (draft.dueDate || draft.startAt) ? (
           <div>
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
               {t.dialog.syncCalendarLabel}
@@ -160,6 +224,7 @@ export function TaskDialog({
                 onChange={(e) => setDraft((d) => ({ ...d, googleCalendarId: e.target.value }))}
                 className="w-full rounded-[var(--radius-inner)] bg-surface-muted px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:bg-surface-sunken focus:ring-2 focus:ring-accent/40"
               >
+                <option value="">{t.dialog.localOnlyOption}</option>
                 {enabledGoogleCalendars.map((calendar) => (
                   <option key={calendar.id} value={calendar.id}>
                     {calendar.summary}
@@ -173,6 +238,19 @@ export function TaskDialog({
             )}
           </div>
         ) : null}
+
+        {/* Location. */}
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
+            {t.dialog.locationLabel}
+          </p>
+          <input
+            value={draft.location ?? ""}
+            onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
+            placeholder={t.dialog.locationPlaceholder}
+            className="w-full rounded-[var(--radius-inner)] bg-surface-muted px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:bg-surface-sunken focus:ring-2 focus:ring-accent/40"
+          />
+        </div>
 
         {/* Description. */}
         <div>
@@ -197,6 +275,25 @@ export function TaskDialog({
             onChange={(checklist) => setDraft((d) => ({ ...d, checklist }))}
           />
         </div>
+
+        {/* Advanced / Meta */}
+        <details className="group rounded-[var(--radius-inner)] border border-surface-muted [&_summary::-webkit-details-marker]:hidden">
+          <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-ink-faint outline-none transition-colors hover:text-ink">
+            {t.dialog.advancedLabel}
+          </summary>
+          <div className="border-t border-surface-muted px-3.5 py-3 text-sm text-ink-soft">
+            <p className="mb-2">
+              {t.dialog.advancedDescription}
+            </p>
+            {task?.googleEventLink ? (
+              <a href={task.googleEventLink} target="_blank" rel="noreferrer" className="text-accent hover:underline font-medium">
+                {t.dialog.openGoogleCalendar}
+              </a>
+            ) : (
+              <p className="text-ink-faint italic">{t.dialog.syncToAccessAdvanced}</p>
+            )}
+          </div>
+        </details>
 
         <button
           type="button"

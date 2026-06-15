@@ -13,6 +13,7 @@ import { useTodos } from "./use-todos";
 import { messages } from "../../lib/i18n";
 import { useLocale } from "../../components/locale-provider";
 import type { UseGoogleCalendarResult } from "../google-calendar/use-google-calendar";
+import type { GoogleCalendarEvent } from "../google-calendar/types";
 
 type View = "board" | "calendar";
 
@@ -66,6 +67,22 @@ export function TodoCard({ className, archiveDays, googleCalendar }: TodoCardPro
     });
   }
 
+  async function convertEventToTask(event: GoogleCalendarEvent) {
+    const created = await addTask({
+      title: event.title || "Untitled Event",
+      description: event.description || "",
+      dueDate: event.start.slice(0, 10),
+      status: "todo",
+      checklist: [],
+      googleCalendarId: event.calendarId,
+      googleEventId: event.id,
+      googleEventLink: event.htmlLink ?? undefined,
+    });
+    if (!created) {
+      alert(t.calendar.eventDetail.convertError);
+    }
+  }
+
   return (
     <BentoCard
       icon={ListChecks}
@@ -117,6 +134,7 @@ export function TodoCard({ className, archiveDays, googleCalendar }: TodoCardPro
           googleCalendar={googleCalendar}
           onOpen={(task) => setDetailId(task.id)}
           onCreateOn={(date) => openNew({ dueDate: date })}
+          onConvert={convertEventToTask}
         />
       )}
 

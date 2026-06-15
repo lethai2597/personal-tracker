@@ -200,6 +200,7 @@ type GoogleCalendarEventDetailDialogProps = {
   onClose: () => void;
   onEdit: (event: GoogleCalendarEvent) => void;
   onDelete: (event: GoogleCalendarEvent) => void;
+  onConvert?: (event: GoogleCalendarEvent) => void;
   formatTimeRange: (event: GoogleCalendarEvent) => string;
 };
 
@@ -209,6 +210,7 @@ export function GoogleCalendarEventDetailDialog({
   onClose,
   onEdit,
   onDelete,
+  onConvert,
   formatTimeRange,
 }: GoogleCalendarEventDetailDialogProps) {
   const t = messages[locale].features.todo.calendar.eventDetail;
@@ -227,6 +229,19 @@ export function GoogleCalendarEventDetailDialog({
       >
         <Pencil size={16} />
       </IconButton>
+      {onConvert && (
+        <IconButton
+          aria-label={t.convertToTask}
+          title={t.convertToTask}
+          onClick={() => { onConvert(event); onClose(); }}
+          className="bg-transparent text-ink-faint hover:bg-surface-muted hover:text-ink"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+          </svg>
+        </IconButton>
+      )}
       <IconButton
         aria-label={t.delete}
         title={t.delete}

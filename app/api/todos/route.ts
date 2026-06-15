@@ -6,6 +6,8 @@ import { parseJson, taskDraftSchema, taskSchema } from "@/lib/dashboard-validati
 import { createId } from "@/lib/id";
 import { requireUserId, unauthorized } from "@/lib/session";
 import type { Task } from "@/features/todo/task-types";
+import { createGoogleCalendarEvent, type GoogleCalendarEventDraft } from "@/lib/google-calendar";
+
 
 export async function GET(request: NextRequest) {
   const userId = await requireUserId();
@@ -30,6 +32,31 @@ export async function POST(request: NextRequest) {
   const body = parsed.data;
   const current = await getTodos(userId);
   const task: Task = { ...body, id: createId(), createdAt: Date.now() };
+
+  if (task.googleCalendarId && !task.googleEventId) {
+    try {
+      const draft: GoogleCalendarEventDraft = {
+        calendarId: task.googleCalendarId,
+        title: task.title,
+        description: task.description,
+        location: task.location,
+        start: task.startAt ? new Date(task.startAt).toISOString() : (task.dueDate ? new Date(task.dueDate).toISOString() : undefined),
+        end: task.endAt ? new Date(task.endAt).toISOString() : undefined,
+        allDay: task.allDay,
+      };
+      const event = await createGoogleCalendarEvent(userId, draft);
+      task.googleEventId = event.id;
+      task.googleEventLink = event.htmlLink ?? undefined;
+      task.googleEventPayload = { etag: event.etag, updated: event.updated };
+      task.syncStatus = "synced";
+    } catch (e) {
+      console.error("Failed to create Google Calendar event", e);
+      task.syncStatus = "error";
+    }
+  } else if (task.googleCalendarId && task.googleEventId) {
+    task.syncStatus = "synced";
+  }
+
   await db.insert(todos).values({
     id: task.id,
     userId,

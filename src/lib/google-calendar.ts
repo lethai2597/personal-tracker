@@ -4,7 +4,7 @@ import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, 
 import { and, eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/db";
-import { googleCalendarConnections, googleCalendarEventCache } from "@/db/schema";
+import { googleCalendarConnections, googleCalendarEventCache, todos } from "@/db/schema";
 import { createId } from "./id";
 
 const TOKEN_VERSION = "v1";
@@ -96,6 +96,7 @@ type GoogleCalendarApiEvent = {
   end?: { date?: string; dateTime?: string };
   updated?: string;
   htmlLink?: string;
+  status?: string;
 };
 
 type CalendarConnectionRow = typeof googleCalendarConnections.$inferSelect;
@@ -311,7 +312,7 @@ export async function syncGoogleCalendarEvents(userId: string, range: { start: s
     const params = new URLSearchParams({
       singleEvents: "true",
       orderBy: "startTime",
-      showDeleted: "false",
+      showDeleted: "true",
       timeMin: toGoogleRangeStart(range.start),
       timeMax: toGoogleRangeEnd(range.end),
     });
@@ -321,9 +322,75 @@ export async function syncGoogleCalendarEvents(userId: string, range: { start: s
     );
 
     for (const apiEvent of response.items ?? []) {
+      if (apiEvent.status === "cancelled" && apiEvent.id) {
+        await deleteCachedGoogleCalendarEvent(userId, calendarId, apiEvent.id);
+        await db.delete(todos).where(
+          and(
+            eq(todos.userId, userId),
+            eq(todos.googleCalendarId, calendarId),
+            eq(todos.googleEventId, apiEvent.id)
+          )
+        );
+        continue;
+      }
+
       const event = normalizeGoogleEvent(calendarId, apiEvent);
       if (!event) continue;
-      events.push(await reconcileFetchedEvent(userId, event));
+
+      const [localTask] = await db
+        .select()
+        .from(todos)
+        .where(
+          and(
+            eq(todos.userId, userId),
+            eq(todos.googleCalendarId, calendarId),
+            eq(todos.googleEventId, event.id)
+          )
+        )
+        .limit(1);
+
+      if (localTask && localTask.syncStatus === "error") {
+        const draft: GoogleCalendarEventDraft = {
+          title: localTask.title,
+          description: localTask.description || undefined,
+          location: localTask.location || undefined,
+          start: localTask.startAt || localTask.dueDate || undefined,
+          end: localTask.endAt || undefined,
+          allDay: localTask.allDay,
+        };
+        try {
+          const updatedEvent = await updateGoogleCalendarEvent(userId, calendarId, event.id, draft);
+          await db
+            .update(todos)
+            .set({
+              syncStatus: "synced",
+              googleEventPayload: { etag: updatedEvent.etag, updated: updatedEvent.updated },
+            })
+            .where(eq(todos.id, localTask.id));
+          events.push(await reconcileFetchedEvent(userId, updatedEvent));
+        } catch (e) {
+          events.push(await reconcileFetchedEvent(userId, event));
+        }
+      } else {
+        const reconciled = await reconcileFetchedEvent(userId, event);
+        if (localTask) {
+          await db
+            .update(todos)
+            .set({
+              title: reconciled.title,
+              description: reconciled.description,
+              location: reconciled.location,
+              startAt: reconciled.start,
+              dueDate: reconciled.allDay ? reconciled.start.slice(0, 10) : reconciled.start,
+              endAt: reconciled.end || null,
+              allDay: reconciled.allDay,
+              googleEventPayload: { etag: reconciled.etag, updated: reconciled.updated },
+              syncStatus: "synced",
+            })
+            .where(eq(todos.id, localTask.id));
+        }
+        events.push(reconciled);
+      }
     }
   }
 
