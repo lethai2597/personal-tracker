@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthShell } from "./auth-shell";
 import { messages, type Locale } from "@/lib/i18n";
+import { GoogleCalendarSettingsPanel } from "@/features/google-calendar/google-calendar-settings-panel";
+import { useGoogleCalendar } from "@/features/google-calendar/use-google-calendar";
 
 export function AccountPage({
 	email,
@@ -14,6 +16,7 @@ export function AccountPage({
 }) {
 	const router = useRouter();
 	const t = messages[initialLocale].auth;
+	const googleCalendar = useGoogleCalendar();
 	const [currentPassword, setCurrentPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 	const [message, setMessage] = useState("");
@@ -79,6 +82,13 @@ export function AccountPage({
 				>
 					{t.logout}
 				</button>
+
+				<div className="mt-4">
+					<GoogleCalendarSettingsPanel
+						calendar={googleCalendar}
+						locale={initialLocale}
+					/>
+				</div>
 			</section>
 		</AuthShell>
 	);

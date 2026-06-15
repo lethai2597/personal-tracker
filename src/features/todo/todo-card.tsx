@@ -2,22 +2,28 @@ import { Calendar, KanbanSquare, ListChecks, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BentoCard } from "../../components/bento-card";
 import { cn } from "../../lib/cn";
+import { toIsoDate } from "../../lib/date";
 import { useLocalStorage } from "../../lib/use-local-storage";
 import { CalendarView } from "./calendar-view";
 import { KanbanBoard } from "./kanban-board";
 import { TaskDetailDialog } from "./task-detail-dialog";
-import { TaskDialog } from "./task-dialog";
+import { TaskDialog, type TaskDialogDraft } from "./task-dialog";
 import type { Task, TaskStatus } from "./task-types";
 import { useTodos } from "./use-todos";
 import { messages } from "../../lib/i18n";
 import { useLocale } from "../../components/locale-provider";
+import type { UseGoogleCalendarResult } from "../google-calendar/use-google-calendar";
 
 type View = "board" | "calendar";
 
-type TodoCardProps = { className?: string; archiveDays: number };
+type TodoCardProps = {
+  className?: string;
+  archiveDays: number;
+  googleCalendar: UseGoogleCalendarResult;
+};
 
 /** Main 2x2 tracker: kanban board or calendar over the same task list. */
-export function TodoCard({ className, archiveDays }: TodoCardProps) {
+export function TodoCard({ className, archiveDays, googleCalendar }: TodoCardProps) {
   const { tasks, byStatus, addTask, patchTask, reorderTasks, removeTask } =
     useTodos();
   const [view, setView] = useLocalStorage<View>("pt.todo-view", "board");
@@ -43,6 +49,21 @@ export function TodoCard({ className, archiveDays }: TodoCardProps) {
       dueDate: opts.dueDate ?? "",
       status: opts.status ?? "todo",
     } as Task);
+  }
+
+  async function addTaskAndSync(draft: TaskDialogDraft) {
+    const { googleCalendarId, ...taskDraft } = draft;
+    const created = await addTask(taskDraft);
+    if (!created || !googleCalendarId || !created.dueDate) return;
+
+    await googleCalendar.createEvent({
+      calendarId: googleCalendarId,
+      title: created.title,
+      description: created.description,
+      start: created.dueDate,
+      end: nextDateIso(created.dueDate),
+      allDay: true,
+    });
   }
 
   return (
@@ -93,6 +114,7 @@ export function TodoCard({ className, archiveDays }: TodoCardProps) {
       ) : (
         <CalendarView
           tasks={tasks}
+          googleCalendar={googleCalendar}
           onOpen={(task) => setDetailId(task.id)}
           onCreateOn={(date) => openNew({ dueDate: date })}
         />
@@ -101,8 +123,10 @@ export function TodoCard({ className, archiveDays }: TodoCardProps) {
       <TaskDialog
         open={createTask !== null}
         task={createTask}
+        googleCalendarConnected={googleCalendar.connection.connected && !googleCalendar.connection.reconnectRequired}
+        googleCalendars={googleCalendar.calendars}
         onClose={() => setCreateTask(null)}
-        onSubmit={addTask}
+        onSubmit={addTaskAndSync}
       />
 
       <TaskDetailDialog
@@ -123,6 +147,12 @@ const BLANK = {
   status: "todo" as const,
   createdAt: 0,
 };
+
+function nextDateIso(iso: string) {
+  const date = new Date(`${iso}T00:00:00`);
+  date.setDate(date.getDate() + 1);
+  return toIsoDate(date);
+}
 
 function ViewTab({
   active,

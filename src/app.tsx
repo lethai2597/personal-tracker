@@ -15,6 +15,7 @@ import { NotesCard } from "./features/notes/notes-card";
 import { PomodoroCard } from "./features/pomodoro/pomodoro-card";
 import { TodoCard } from "./features/todo/todo-card";
 import { type Locale } from "./lib/i18n";
+import { useGoogleCalendar } from "./features/google-calendar/use-google-calendar";
 
 const WELCOMED_KEY = "pt_welcomed";
 
@@ -33,6 +34,7 @@ export function App({
 	initialLocale: Locale;
 }) {
 	const { settings, update } = useSettings();
+	const googleCalendar = useGoogleCalendar();
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [locale, setLocale] = useState<Locale>(initialLocale);
 	const { data: welcomed, setData: setWelcomed } = useApiState<boolean>(
@@ -76,6 +78,7 @@ export function App({
 					<TodoCard
 						className="min-h-[460px] lg:col-span-2 lg:row-span-2 lg:min-h-0"
 						archiveDays={settings.archiveDays}
+						googleCalendar={googleCalendar}
 					/>
 
 					{/* Right column: Pomodoro takes only the height it needs, Notes fills the rest. */}
@@ -94,6 +97,7 @@ export function App({
 				settings={settings}
 				locale={locale}
 				onLocaleChange={setLocale}
+				googleCalendar={googleCalendar}
 				onClose={() => setSettingsOpen(false)}
 				onUpdate={update}
 			/>

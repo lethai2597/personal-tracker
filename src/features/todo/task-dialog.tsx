@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "../../lib/cn";
 import { Modal } from "../../components/modal";
 import { DatePicker } from "../../components/ui/date-picker";
@@ -7,21 +7,29 @@ import { STATUS_META, TASK_STATUSES, type Task } from "./task-types";
 import type { TaskDraft } from "./use-todos";
 import { messages } from "../../lib/i18n";
 import { useLocale } from "../../components/locale-provider";
+import type { GoogleCalendarListItem } from "../google-calendar/types";
+
+export type TaskDialogDraft = TaskDraft & {
+  googleCalendarId?: string;
+};
 
 type TaskDialogProps = {
   open: boolean;
   /** Prefilled fields (status from a column, due date from the calendar). */
   task: Task | null;
+  googleCalendarConnected?: boolean;
+  googleCalendars?: GoogleCalendarListItem[];
   onClose: () => void;
-  onSubmit: (draft: TaskDraft) => void;
+  onSubmit: (draft: TaskDialogDraft) => void | Promise<void>;
 };
 
-const EMPTY: TaskDraft = {
+const EMPTY: TaskDialogDraft = {
   title: "",
   description: "",
   dueDate: "",
   status: "todo",
   checklist: [],
+  googleCalendarId: "",
 };
 
 /**
@@ -29,13 +37,25 @@ const EMPTY: TaskDraft = {
  * due date, description, checklist) but fields are plain inputs gathered into a
  * draft and committed with one button, so the create/edit experience matches.
  */
-export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
-  const [draft, setDraft] = useState<TaskDraft>(EMPTY);
+export function TaskDialog({
+  open,
+  task,
+  googleCalendarConnected = false,
+  googleCalendars = [],
+  onClose,
+  onSubmit,
+}: TaskDialogProps) {
+  const [draft, setDraft] = useState<TaskDialogDraft>(EMPTY);
   const locale = useLocale();
   const t = messages[locale].features.todo;
+  const enabledGoogleCalendars = useMemo(
+    () => (googleCalendarConnected ? googleCalendars.filter((calendar) => calendar.selected) : []),
+    [googleCalendarConnected, googleCalendars],
+  );
 
   useEffect(() => {
     if (!open) return;
+    const firstCalendarId = enabledGoogleCalendars[0]?.id ?? "";
     setDraft(
       task
         ? {
@@ -44,14 +64,19 @@ export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
             dueDate: task.dueDate,
             status: task.status,
             checklist: task.checklist ?? [],
+            googleCalendarId: task.dueDate ? firstCalendarId : "",
           }
-        : EMPTY,
+        : { ...EMPTY, googleCalendarId: "" },
     );
-  }, [open, task]);
+  }, [enabledGoogleCalendars, open, task]);
 
   function submit() {
     if (!draft.title.trim()) return;
-    onSubmit({ ...draft, title: draft.title.trim() });
+    void onSubmit({
+      ...draft,
+      title: draft.title.trim(),
+      googleCalendarId: draft.dueDate ? draft.googleCalendarId : undefined,
+    });
     onClose();
   }
 
@@ -111,10 +136,43 @@ export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
           </p>
           <DatePicker
             value={draft.dueDate}
-            onChange={(iso) => setDraft((d) => ({ ...d, dueDate: iso }))}
+            onChange={(iso) =>
+              setDraft((d) => ({
+                ...d,
+                dueDate: iso,
+                googleCalendarId: iso
+                  ? d.googleCalendarId || enabledGoogleCalendars[0]?.id || ""
+                  : "",
+              }))
+            }
             placeholder={t.dialog.dueDatePickerPlaceholder}
           />
         </div>
+
+        {googleCalendarConnected && draft.dueDate ? (
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
+              {t.dialog.syncCalendarLabel}
+            </p>
+            {enabledGoogleCalendars.length ? (
+              <select
+                value={draft.googleCalendarId ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, googleCalendarId: e.target.value }))}
+                className="w-full rounded-[var(--radius-inner)] bg-surface-muted px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:bg-surface-sunken focus:ring-2 focus:ring-accent/40"
+              >
+                {enabledGoogleCalendars.map((calendar) => (
+                  <option key={calendar.id} value={calendar.id}>
+                    {calendar.summary}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="rounded-[var(--radius-inner)] bg-surface-muted px-3.5 py-2.5 text-sm text-ink-faint">
+                {t.dialog.noSyncedCalendars}
+              </p>
+            )}
+          </div>
+        ) : null}
 
         {/* Description. */}
         <div>

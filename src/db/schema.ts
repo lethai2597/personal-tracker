@@ -130,3 +130,40 @@ export const devPasswordResetLinks = pgTable("dev_password_reset_links", {
   url: text("url").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
+
+export const googleCalendarConnections = pgTable("google_calendar_connections", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  googleEmail: text("google_email").notNull(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  tokenExpiresAt: timestamp("token_expires_at", { mode: "date" }).notNull(),
+  scope: text("scope").notNull(),
+  selectedCalendarIds: text("selected_calendar_ids").notNull().default("[]"),
+  syncIntervalMinutes: integer("sync_interval_minutes").notNull().default(5),
+  reconnectRequired: boolean("reconnect_required").notNull().default(false),
+  connectedAt: timestamp("connected_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
+});
+
+export const googleCalendarEventCache = pgTable(
+  "google_calendar_event_cache",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    calendarId: text("calendar_id").notNull(),
+    googleEventId: text("google_event_id").notNull(),
+    etag: text("etag"),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    location: text("location").notNull().default(""),
+    start: text("start").notNull(),
+    end: text("end").notNull(),
+    allDay: boolean("all_day").notNull().default(false),
+    googleUpdatedAt: timestamp("google_updated_at", { mode: "date" }),
+    localUpdatedAt: timestamp("local_updated_at", { mode: "date" }),
+    pendingLocalUpdate: boolean("pending_local_update").notNull().default(false),
+    deleted: boolean("deleted").notNull().default(false),
+  },
+  (table) => [uniqueIndex("google_calendar_event_user_calendar_event_idx").on(table.userId, table.calendarId, table.googleEventId)],
+);

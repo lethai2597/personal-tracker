@@ -27,6 +27,8 @@ import {
 	SelectValue,
 } from "./ui/select";
 import { messages, type Locale } from "@/lib/i18n";
+import { GoogleCalendarSettingsPanel } from "@/features/google-calendar/google-calendar-settings-panel";
+import type { UseGoogleCalendarResult } from "@/features/google-calendar/use-google-calendar";
 
 type SettingsModalProps = {
 	open: boolean;
@@ -35,6 +37,7 @@ type SettingsModalProps = {
 	onUpdate: (patch: Partial<Settings>) => void;
 	locale: Locale;
 	onLocaleChange: (l: Locale) => void;
+	googleCalendar: UseGoogleCalendarResult;
 };
 
 export function SettingsModal({
@@ -44,6 +47,7 @@ export function SettingsModal({
 	onUpdate,
 	locale,
 	onLocaleChange,
+	googleCalendar,
 }: SettingsModalProps) {
 	const confirm = useConfirm();
 	const [purgeDays, setPurgeDays] = useState(30);
@@ -139,6 +143,11 @@ export function SettingsModal({
 						onChange={onLocaleChange}
 					/>
 				</div>
+
+				<GoogleCalendarSettingsPanel
+					calendar={googleCalendar}
+					locale={locale}
+				/>
 
 				<div>
 					<FieldLabel>{t.primaryColor}</FieldLabel>

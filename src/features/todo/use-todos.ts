@@ -66,16 +66,16 @@ export function useTodos() {
     return groups;
   }, [tasks]);
 
-  function addTask(draft: TaskDraft) {
-    void commit(
+  async function addTask(draft: TaskDraft) {
+    const created = await commit(
       apiJson<Task>("/api/todos", {
         method: "POST",
         body: JSON.stringify(draft),
       }),
       () => tasks,
-    ).then((created) => {
-      if (created) setRawTasks((prev) => stampDone([created, ...prev]));
-    });
+    );
+    if (created) setRawTasks((prev) => stampDone([created, ...prev]));
+    return created ?? null;
   }
 
   function updateTask(id: string, draft: TaskDraft) {
