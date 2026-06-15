@@ -13,16 +13,12 @@ export interface CreateEventJobData {
   type: "createEvent";
   userId: string;
   todoId: string;
-  draft: GoogleCalendarEventDraft;
 }
 
 export interface UpdateEventJobData {
   type: "updateEvent";
   userId: string;
   todoId: string;
-  calendarId: string;
-  eventId: string;
-  draft: GoogleCalendarEventDraft;
 }
 
 export interface DeleteEventJobData {
@@ -78,7 +74,23 @@ if (typeof window === "undefined") {
         
         switch (data.type) {
           case "createEvent": {
-            const event = await createGoogleCalendarEvent(data.userId, data.draft);
+            const [task] = await db.select().from(todos).where(and(eq(todos.id, data.todoId), eq(todos.userId, data.userId)));
+            if (!task || !task.googleCalendarId) {
+              console.log(`[BullMQ] Task ${data.todoId} was deleted or lacks calendar before event creation. Skipping.`);
+              break;
+            }
+            
+            const draft: GoogleCalendarEventDraft = {
+              calendarId: task.googleCalendarId,
+              title: task.title,
+              description: task.description ?? undefined,
+              location: task.location ?? undefined,
+              start: task.startAt ? new Date(task.startAt).toISOString() : (task.dueDate ? new Date(task.dueDate).toISOString() : undefined),
+              end: task.endAt ? new Date(task.endAt).toISOString() : undefined,
+              allDay: task.allDay ?? false,
+            };
+
+            const event = await createGoogleCalendarEvent(data.userId, draft);
             await db.update(todos)
               .set({
                 googleEventId: event.id,
@@ -90,11 +102,26 @@ if (typeof window === "undefined") {
             break;
           }
           case "updateEvent": {
+            const [task] = await db.select().from(todos).where(and(eq(todos.id, data.todoId), eq(todos.userId, data.userId)));
+            if (!task || !task.googleCalendarId || !task.googleEventId) {
+              console.log(`[BullMQ] Task ${data.todoId} missing or not fully linked. Skipping update.`);
+              break;
+            }
+
+            const draft: GoogleCalendarEventDraft = {
+              title: task.title,
+              description: task.description ?? undefined,
+              location: task.location ?? undefined,
+              start: task.startAt ? new Date(task.startAt).toISOString() : (task.dueDate ? new Date(task.dueDate).toISOString() : undefined),
+              end: task.endAt ? new Date(task.endAt).toISOString() : undefined,
+              allDay: task.allDay ?? false,
+            };
+
             const event = await updateGoogleCalendarEvent(
               data.userId,
-              data.calendarId,
-              data.eventId,
-              data.draft
+              task.googleCalendarId,
+              task.googleEventId,
+              draft
             );
             await db.update(todos)
               .set({

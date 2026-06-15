@@ -43,7 +43,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const isCalendarTask = existing.googleCalendarId && existing.googleEventId;
+  const isLinkedTask = !!existing.googleCalendarId;
   const hasSyncableChanges =
     body.title !== undefined ||
     body.description !== undefined ||
@@ -53,22 +53,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     body.endAt !== undefined ||
     body.allDay !== undefined;
 
-  let draftForQueue: GoogleCalendarEventDraft | undefined;
-
-  if (isCalendarTask && hasSyncableChanges) {
+  if (isLinkedTask && hasSyncableChanges) {
     changes.syncStatus = "pending_sync";
-    const startMs = body.startAt !== undefined ? body.startAt : existing.startAt;
-    const dueMs = body.dueDate !== undefined ? body.dueDate : existing.dueDate;
-    const endMs = body.endAt !== undefined ? body.endAt : existing.endAt;
-    
-    draftForQueue = {
-      title: body.title ?? existing.title,
-      description: body.description ?? existing.description ?? undefined,
-      location: body.location ?? existing.location ?? undefined,
-      start: startMs ? new Date(startMs).toISOString() : dueMs ? new Date(dueMs).toISOString() : undefined,
-      end: endMs ? new Date(endMs).toISOString() : undefined,
-      allDay: body.allDay ?? existing.allDay ?? undefined,
-    };
   }
 
   await db
@@ -76,15 +62,12 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     .set(changes)
     .where(and(eq(todos.userId, userId), eq(todos.id, id)));
 
-  if (isCalendarTask && draftForQueue) {
+  if (isLinkedTask && hasSyncableChanges && existing.googleEventId) {
     try {
       await googleCalendarQueue.add("updateEvent", {
         type: "updateEvent",
         userId,
         todoId: id,
-        calendarId: existing.googleCalendarId!,
-        eventId: existing.googleEventId!,
-        draft: draftForQueue,
       });
     } catch (e) {
       console.error("Failed to enqueue Google Calendar update", e);

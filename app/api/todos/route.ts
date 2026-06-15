@@ -36,21 +36,19 @@ export async function POST(request: NextRequest) {
   const current = await getTodos(userId);
   const task: Task = { ...body, id: createId(), createdAt: Date.now() };
 
-  let draft: GoogleCalendarEventDraft | undefined;
-
   if (task.googleCalendarId && !task.googleEventId) {
     task.syncStatus = "pending_sync";
-    draft = {
-      calendarId: task.googleCalendarId,
-      title: task.title,
-      description: task.description,
-      location: task.location,
-      start: task.startAt ? new Date(task.startAt).toISOString() : (task.dueDate ? new Date(task.dueDate).toISOString() : undefined),
-      end: task.endAt ? new Date(task.endAt).toISOString() : undefined,
-      allDay: task.allDay,
-    };
-  } else if (task.googleCalendarId && task.googleEventId) {
-    task.syncStatus = "synced";
+
+    try {
+      await googleCalendarQueue.add("createEvent", {
+        type: "createEvent",
+        userId,
+        todoId: task.id,
+      });
+    } catch (e) {
+      console.error("Failed to enqueue Google Calendar sync", e);
+      task.syncStatus = "error";
+    }
   }
 
   await db.insert(todos).values({
@@ -76,21 +74,7 @@ export async function POST(request: NextRequest) {
     googleEventPayload: task.googleEventPayload ?? null,
   });
 
-  if (draft && task.googleCalendarId) {
-    try {
-      await googleCalendarQueue.add("createEvent", {
-        type: "createEvent",
-        userId,
-        todoId: task.id,
-        draft,
-      });
-    } catch (e) {
-      console.error("Failed to enqueue Google Calendar creation", e);
-      // Fallback update to error status
-      await db.update(todos).set({ syncStatus: "error" }).where(eq(todos.id, task.id));
-      task.syncStatus = "error";
-    }
-  }
+
 
   return NextResponse.json(task, { status: 201 });
 }
