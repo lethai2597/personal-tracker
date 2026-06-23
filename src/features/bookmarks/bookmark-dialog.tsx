@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { FieldLabel, TextField } from "../../components/form-controls";
+import { isSubmitEnter } from "../../lib/keyboard";
 import { Modal } from "../../components/modal";
 import { fetchPageTitle } from "../../lib/fetch-title";
 import { normalizeUrl, tidyTitle } from "../../lib/url";
@@ -72,7 +73,7 @@ export function BookmarkDialog({
             placeholder="vd: github.com hoặc https://..."
             value={draft.url}
             onChange={(e) => setDraft((d) => ({ ...d, url: e.target.value }))}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
+            onKeyDown={(e) => isSubmitEnter(e) && submit()}
           />
         </div>
         <div>

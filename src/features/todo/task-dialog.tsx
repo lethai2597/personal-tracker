@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "../../lib/cn";
+import { isSubmitEnter } from "../../lib/keyboard";
 import { Modal } from "../../components/modal";
 import { DatePicker } from "../../components/ui/date-picker";
 import { TaskChecklist } from "./task-checklist";
@@ -93,7 +94,7 @@ export function TaskDialog({ open, task, onClose, onSubmit }: TaskDialogProps) {
             value={draft.title}
             onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
             onKeyDown={(e) => {
-              if (e.key === "Enter") submit();
+              if (isSubmitEnter(e)) submit();
             }}
             placeholder="Tên task..."
             className="w-full rounded-[var(--radius-inner)] bg-surface-muted px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:bg-surface-sunken focus:ring-2 focus:ring-accent/40"

@@ -1,6 +1,7 @@
 import { Check, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { TextField } from "../../components/form-controls";
+import { isSubmitEnter } from "../../lib/keyboard";
 import { IconButton } from "../../components/icon-button";
 import { Modal } from "../../components/modal";
 
@@ -64,7 +65,7 @@ export function GroupManagerDialog({
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") commitEdit();
+                        if (isSubmitEnter(e)) commitEdit();
                         if (e.key === "Escape") setEditing(null);
                       }}
                       className="min-w-0 flex-1 bg-transparent text-sm font-medium text-ink outline-none"
@@ -113,7 +114,7 @@ export function GroupManagerDialog({
             placeholder="Tên nhóm mới"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addGroup()}
+            onKeyDown={(e) => isSubmitEnter(e) && addGroup()}
           />
           <button
             type="button"

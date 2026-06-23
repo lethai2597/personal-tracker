@@ -1,6 +1,7 @@
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "../../lib/cn";
+import { isSubmitEnter } from "../../lib/keyboard";
 import { useConfirm } from "../../components/confirm-dialog";
 import { IconButton } from "../../components/icon-button";
 import { Modal } from "../../components/modal";
@@ -130,7 +131,7 @@ export function TaskDetailDialog({
             onChange={(e) => setTitle(e.target.value)}
             onBlur={commitTitle}
             onKeyDown={(e) => {
-              if (e.key === "Enter") commitTitle();
+              if (isSubmitEnter(e)) commitTitle();
               if (e.key === "Escape") {
                 // Exit the inline edit only — don't let Modal catch Esc + close.
                 e.stopPropagation();
