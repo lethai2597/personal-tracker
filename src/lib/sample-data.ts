@@ -1,5 +1,6 @@
 import { toIsoDate } from "./date";
 import { createId } from "./id";
+import { suspendPersistence } from "./use-local-storage";
 import type { Bookmark } from "../features/bookmarks/use-bookmarks";
 import type { Habit } from "../features/habits/use-habits";
 import type { Task, TaskStatus } from "../features/todo/task-types";
@@ -17,6 +18,13 @@ function isoInDays(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
   return toIsoDate(d);
+}
+
+/** Epoch ms `days` from now (negative = past); used for done timestamps. */
+function msInDays(days: number): number {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.getTime();
 }
 
 /** Demo tasks: title, description, due-day offset (null = no date), status. */
@@ -70,14 +78,20 @@ Cần nhớ
 
 function buildTasks(): Task[] {
   const now = Date.now();
-  return SAMPLE_TASKS.map(([title, description, dueOffset, status], i) => ({
-    id: createId(),
-    title,
-    description,
-    dueDate: dueOffset === null ? "" : isoInDays(dueOffset),
-    status,
-    createdAt: now - (SAMPLE_TASKS.length - i) * 1000,
-  }));
+  return SAMPLE_TASKS.map(([title, description, dueOffset, status], i) => {
+    const task: Task = {
+      id: createId(),
+      title,
+      description,
+      dueDate: dueOffset === null ? "" : isoInDays(dueOffset),
+      status,
+      createdAt: now - (SAMPLE_TASKS.length - i) * 1000,
+    };
+    // Done demos carry a recent completion time (relative to today) so the
+    // auto-hide / purge-old-done features have something to act on.
+    if (status === "done") task.doneAt = msInDays(dueOffset ?? -1);
+    return task;
+  });
 }
 
 function buildBookmarks(): Bookmark[] {
@@ -117,12 +131,17 @@ export function seedSampleDataIfEmpty() {
 
 /** Overwrite every tracker with a full demo dataset, then reload to render it. */
 export function createSampleData() {
+  // Stop in-memory fields (the debounced note) from flushing stale text over
+  // the fresh sample data during the reload's pagehide.
+  suspendPersistence();
   writeSampleData();
   window.location.reload();
 }
 
 /** Clear all tracker data and reload, keeping personalization settings. */
 export function clearData() {
+  // Suspend writes first, else the note's pagehide flush re-saves it post-wipe.
+  suspendPersistence();
   for (const key of Object.values(DATA_KEYS)) {
     window.localStorage.removeItem(key);
   }

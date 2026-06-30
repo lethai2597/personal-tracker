@@ -4,6 +4,17 @@ import { useEffect, useRef, useState } from "react";
 /** Fired when a write fails because localStorage is full; UI shows a warning. */
 export const STORAGE_FULL_EVENT = "pt:storage-full";
 
+/**
+ * Set just before the app wipes storage and reloads. A debounced field (e.g.
+ * the note) flushes its in-memory value on `pagehide`/unmount; without this
+ * guard that flush would re-write the value right after we removed it, so
+ * "clear data" or "seed sample" would leave the old note behind.
+ */
+let persistSuspended = false;
+export function suspendPersistence() {
+  persistSuspended = true;
+}
+
 type Options = {
   /** Delay writes by N ms (coalesces rapid changes, e.g. typing a note). */
   debounce?: number;
@@ -26,6 +37,7 @@ export function useLocalStorage<T>(
   valueRef.current = value;
 
   const persist = useCallbackRef((next: T) => {
+    if (persistSuspended) return;
     try {
       window.localStorage.setItem(key, JSON.stringify(next));
     } catch (e) {
