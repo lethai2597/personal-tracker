@@ -96,7 +96,6 @@ export function SettingsModal({
       title="Cài đặt"
       onClose={onClose}
       peek={peek}
-      onPeekEnd={() => setPeek(false)}
     >
       <div className="space-y-5">
         <div>

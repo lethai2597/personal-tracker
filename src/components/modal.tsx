@@ -17,11 +17,12 @@ type ModalProps = {
   wide?: boolean;
   /**
    * Fade the whole dialog out (but keep it mounted) so the user can preview a
-   * live change on the dashboard behind it — e.g. while a colour picker is open.
-   * Any click ends the peek instead of closing the dialog.
+   * live change on the board behind it — e.g. while a colour-picker popover is
+   * open. The caller toggles this off when the picker closes; the faded dialog
+   * still intercepts outside clicks (no click-through), and the picker's own
+   * outside-click handler closes it, which restores the dialog.
    */
   peek?: boolean;
-  onPeekEnd?: () => void;
 };
 
 const FOCUSABLE =
@@ -40,9 +41,18 @@ export function Modal({
   headerAction,
   wide,
   peek,
-  onPeekEnd,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Backdrop click closes the dialog — but not while peeking (a colour picker
+  // is open) or while any Radix popover/select is open, so dismissing one of
+  // those never also tears down the dialog behind it.
+  const onBackdrop = () => {
+    if (peek || document.querySelector("[data-radix-popper-content-wrapper]")) {
+      return;
+    }
+    onClose();
+  };
 
   // Escape closes; Tab cycles within the dialog (skips Radix portals).
   useEffect(() => {
@@ -92,7 +102,7 @@ export function Modal({
             "fixed inset-0 z-50 grid place-items-center p-4",
             peek ? "" : "bg-black/40 backdrop-blur-sm",
           )}
-          onMouseDown={peek ? onPeekEnd : onClose}
+          onMouseDown={onBackdrop}
           initial={{ opacity: 0 }}
           animate={{ opacity: peek ? 0 : 1 }}
           exit={{ opacity: 0 }}
@@ -108,7 +118,7 @@ export function Modal({
               "max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[var(--radius-card)] bg-surface p-6 outline-none",
               wide ? "max-w-3xl" : "max-w-xl",
             )}
-            onMouseDown={peek ? onPeekEnd : (e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
