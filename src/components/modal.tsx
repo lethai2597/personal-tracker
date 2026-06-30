@@ -15,6 +15,13 @@ type ModalProps = {
   headerAction?: ReactNode;
   /** Wider dialog for multi-column content (e.g. the task detail). */
   wide?: boolean;
+  /**
+   * Fade the whole dialog out (but keep it mounted) so the user can preview a
+   * live change on the dashboard behind it — e.g. while a colour picker is open.
+   * Any click ends the peek instead of closing the dialog.
+   */
+  peek?: boolean;
+  onPeekEnd?: () => void;
 };
 
 const FOCUSABLE =
@@ -32,6 +39,8 @@ export function Modal({
   children,
   headerAction,
   wide,
+  peek,
+  onPeekEnd,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -79,10 +88,13 @@ export function Modal({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4 backdrop-blur-sm"
-          onMouseDown={onClose}
+          className={cn(
+            "fixed inset-0 z-50 grid place-items-center p-4",
+            peek ? "" : "bg-black/40 backdrop-blur-sm",
+          )}
+          onMouseDown={peek ? onPeekEnd : onClose}
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: peek ? 0 : 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
         >
@@ -96,7 +108,7 @@ export function Modal({
               "max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[var(--radius-card)] bg-surface p-6 outline-none",
               wide ? "max-w-3xl" : "max-w-xl",
             )}
-            onMouseDown={(e) => e.stopPropagation()}
+            onMouseDown={peek ? onPeekEnd : (e) => e.stopPropagation()}
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}

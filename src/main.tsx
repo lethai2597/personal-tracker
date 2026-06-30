@@ -20,6 +20,12 @@ if (window.localStorage.getItem("pt.welcomed") === null) {
   seedSampleDataIfEmpty();
 }
 
+// Enable accent cross-fade only after the first paint, so the initial colour
+// is applied instantly (no sweep) but later changes animate.
+requestAnimationFrame(() =>
+  document.documentElement.classList.add("theme-ready"),
+);
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <TooltipProvider delayDuration={200} skipDelayDuration={300}>

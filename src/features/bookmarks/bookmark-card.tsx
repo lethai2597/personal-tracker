@@ -94,7 +94,7 @@ export function BookmarkCard({ className }: { className?: string }) {
             visible.map((b) => (
               <div
                 key={b.id}
-                className="group flex items-center gap-3 rounded-[var(--radius-inner)] p-2 transition-colors hover:bg-surface-sunken"
+                className="group flex items-center rounded-[var(--radius-inner)] p-2 transition-colors hover:bg-surface-sunken"
               >
                 <a
                   href={b.url}
@@ -131,7 +131,7 @@ export function BookmarkCard({ className }: { className?: string }) {
                     type="button"
                     aria-label="Xóa bookmark"
                     onClick={() => removeBookmark(b.id)}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink-faint opacity-0 transition hover:bg-surface-hover hover:text-ink group-hover:opacity-100"
+                    className="grid h-7 w-0 shrink-0 place-items-center overflow-hidden rounded-full text-ink-faint opacity-0 transition-all duration-200 hover:bg-surface-hover hover:text-ink group-hover:ml-2 group-hover:w-7 group-hover:opacity-100"
                   >
                     <X size={15} />
                   </button>

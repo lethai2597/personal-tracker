@@ -22,13 +22,13 @@ export function Tooltip({ label, side = "top", children }: TooltipProps) {
           side={side}
           sideOffset={6}
           className={cn(
-            "z-[80] select-none rounded-md bg-btn px-2 py-1 text-xs font-medium text-btn-ink",
+            "z-[80] select-none rounded-md bg-tooltip px-2 py-1 text-xs font-medium text-tooltip-ink",
             "data-[state=delayed-open]:animate-pop-in data-[state=instant-open]:animate-pop-in",
             "data-[state=closed]:animate-pop-out",
           )}
         >
           {label}
-          <TooltipPrimitive.Arrow className="fill-btn" />
+          <TooltipPrimitive.Arrow className="fill-tooltip" />
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>

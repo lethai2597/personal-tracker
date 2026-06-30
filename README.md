@@ -28,12 +28,12 @@ Stack: **Vite + React 19 + TypeScript + Tailwind CSS v4 + lucide-react**. Font: 
 Header toàn trang: bên trái là **tên board + ngày hôm nay**, bên phải có nút **Cài đặt**. Mỗi trình duyệt là một người dùng riêng (localStorage), tùy biến qua modal Cài đặt:
 
 - **Tên board** — hiện ở header.
-- **Giao diện** — Sáng / Tối (dark mode đầy đủ).
-- **Màu chủ đạo** — 6 màu, đổi toàn bộ accent tức thì.
-- **Ảnh nền** — 8 ảnh sẵn (lá thu, lá xanh, khinh khí cầu, bờ băng...) + Trơn.
+- **Giao diện** — Sáng / Tối / **Hệ thống** (theo `prefers-color-scheme`, tự đổi khi OS đổi).
+- **Màu chủ đạo** — 8 màu đậm sắp theo bánh xe màu + ô **Tuỳ chỉnh** (color picker). Đổi màu **cross-fade mượt** toàn UI (token accent đăng ký `@property`). Nút bấm chính (CTA) dùng luôn màu primary.
+- **Nền** — 8 ảnh + dải **màu nền đặc** + ô **Tuỳ chỉnh**, gộp chung một lưới tile có **scroll** khi dài. Ảnh hay màu, chọn cái nào áp cái đó.
 - **Xoá data / Tạo data mẫu** — Xoá data giữ lại cài đặt giao diện; tạo data mẫu ghi đè toàn bộ task/note/bookmark.
 
-Theme dùng CSS variable semantic (`--color-surface`, `--color-ink`, `--color-accent`...) flip theo class `.dark`; màu primary chỉ đổi `--color-accent`, các sắc độ phụ tự suy ra bằng `color-mix`. Settings áp trước khi paint (trong `main.tsx`) để không nháy theme khi load.
+Theme dùng CSS variable semantic (`--color-surface`, `--color-ink`, `--color-accent`...) flip theo class `.dark`; màu primary chỉ đổi `--color-accent`, các sắc độ phụ tự suy ra bằng `color-mix`. **Nút solid dùng token `--color-btn` = đen/trắng trung tính** (không theo accent) để CTA luôn tĩnh; **tooltip** có token đen riêng. Màu primary (accent) chỉ dùng cho **điểm nhấn + trạng thái hoàn thành**: tab/filter active, ô "today", chấm Done, tick checklist/thói quen, chấm streak. Deadline gần/quá hạn dùng **đỏ**, lửa streak **amber**, còn lại trung tính. Settings áp trước khi paint (trong `main.tsx`) để không nháy theme khi load.
 
 ## Thiết kế
 

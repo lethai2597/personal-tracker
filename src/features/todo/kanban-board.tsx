@@ -327,8 +327,9 @@ function TaskCardBody({ task, overlay }: { task: Task; overlay?: boolean }) {
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                due === "overdue" && "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300",
-                due === "today" && "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+                // Today + overdue read as urgent (red); anything further out is calm grey.
+                (due === "overdue" || due === "today") &&
+                  "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300",
                 due === "upcoming" && "bg-surface-muted text-ink-soft",
               )}
             >

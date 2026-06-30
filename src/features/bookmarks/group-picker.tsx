@@ -90,7 +90,7 @@ function Chip({
       onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-        active ? "bg-accent-strong text-white" : "bg-surface-muted text-ink-soft hover:bg-surface-hover",
+        active ? "bg-accent-soft text-accent-ink" : "bg-surface-muted text-ink-soft hover:bg-surface-hover",
       )}
     >
       {children}

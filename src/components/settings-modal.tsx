@@ -1,10 +1,8 @@
-import { Check, Moon, Sparkles, Sun, Trash2 } from "lucide-react";
+import { Monitor, Moon, Sparkles, Sun, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/cn";
 import {
   ARCHIVE_DAY_OPTIONS,
-  BACKGROUNDS,
-  PRIMARY_COLORS,
   PURGE_DAY_OPTIONS,
   type Settings,
 } from "../lib/settings";
@@ -14,10 +12,10 @@ import {
   createSampleData,
   purgeDoneOlderThan,
 } from "../lib/sample-data";
+import { AppearanceControls } from "./appearance-controls";
 import { useConfirm } from "./confirm-dialog";
 import { FieldLabel, TextField } from "./form-controls";
 import { Modal } from "./modal";
-import { Tooltip } from "./ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -41,6 +39,9 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const confirm = useConfirm();
   const [purgeDays, setPurgeDays] = useState(30);
+  // While a native colour picker is open, fade the dialog so the change is
+  // visible live on the dashboard behind it.
+  const [peek, setPeek] = useState(false);
 
   async function handlePurge() {
     const n = countDoneOlderThan(purgeDays);
@@ -90,7 +91,13 @@ export function SettingsModal({
   }
 
   return (
-    <Modal open={open} title="Cài đặt" onClose={onClose}>
+    <Modal
+      open={open}
+      title="Cài đặt"
+      onClose={onClose}
+      peek={peek}
+      onPeekEnd={() => setPeek(false)}
+    >
       <div className="space-y-5">
         <div>
           <FieldLabel>Tên board</FieldLabel>
@@ -103,7 +110,7 @@ export function SettingsModal({
 
         <div>
           <FieldLabel>Giao diện</FieldLabel>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <ThemeOption
               active={settings.theme === "light"}
               icon={<Sun size={16} />}
@@ -116,64 +123,20 @@ export function SettingsModal({
               label="Tối"
               onClick={() => onUpdate({ theme: "dark" })}
             />
+            <ThemeOption
+              active={settings.theme === "system"}
+              icon={<Monitor size={16} />}
+              label="Hệ thống"
+              onClick={() => onUpdate({ theme: "system" })}
+            />
           </div>
         </div>
 
-        <div>
-          <FieldLabel>Màu chủ đạo</FieldLabel>
-          <div className="flex flex-wrap gap-2">
-            {PRIMARY_COLORS.map((c) => (
-              <Tooltip key={c.value} label={c.name}>
-                <button
-                  type="button"
-                  aria-label={c.name}
-                  onClick={() => onUpdate({ primary: c.value })}
-                  style={{ backgroundColor: c.value }}
-                  className={cn(
-                    "grid h-9 w-9 place-items-center rounded-full text-white transition-transform hover:scale-105",
-                    settings.primary === c.value &&
-                      "ring-2 ring-ink ring-offset-2 ring-offset-[var(--color-surface)]",
-                  )}
-                >
-                  {settings.primary === c.value ? <Check size={16} /> : null}
-                </button>
-              </Tooltip>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <FieldLabel>Ảnh nền</FieldLabel>
-          <div className="grid grid-cols-3 gap-2">
-            {BACKGROUNDS.map((bg) => (
-              <Tooltip key={bg.name} label={bg.name}>
-                <button
-                  type="button"
-                  aria-label={bg.name}
-                  onClick={() => onUpdate({ background: bg.value })}
-                  className={cn(
-                    "relative aspect-video overflow-hidden rounded-[var(--radius-inner)] bg-surface-muted ring-2 transition",
-                    settings.background === bg.value
-                      ? "ring-accent"
-                      : "ring-transparent hover:ring-line",
-                  )}
-                >
-                  {bg.value ? (
-                    <img
-                      src={bg.value}
-                      alt={bg.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="grid h-full place-items-center text-[11px] font-medium text-ink-soft">
-                      {bg.name}
-                    </span>
-                  )}
-                </button>
-              </Tooltip>
-            ))}
-          </div>
-        </div>
+        <AppearanceControls
+          settings={settings}
+          onUpdate={onUpdate}
+          onPreview={setPeek}
+        />
 
         <div className="space-y-4">
           <div>

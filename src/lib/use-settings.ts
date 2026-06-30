@@ -13,6 +13,12 @@ export function useSettings() {
 
   useEffect(() => {
     applySettings(settings);
+    // In "system" mode, re-apply whenever the OS light/dark preference flips.
+    if (settings.theme !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => applySettings(settings);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
   }, [settings]);
 
   function update(patch: Partial<Settings>) {
