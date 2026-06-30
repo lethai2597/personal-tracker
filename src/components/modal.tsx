@@ -117,6 +117,9 @@ export function Modal({
             className={cn(
               "max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[var(--radius-card)] bg-surface p-6 outline-none",
               wide ? "max-w-3xl" : "max-w-xl",
+              // While faded for a colour preview, the invisible dialog must not
+              // catch hover (tooltips) or clicks on its hidden controls.
+              peek && "pointer-events-none",
             )}
             onMouseDown={(e) => e.stopPropagation()}
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
